@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.zip
+.env
+# Modelo de idioma do Tesseract (grande, baixado uma vez — ver README)
+assets/tesseract/lang/*.traineddata
+assets/tesseract/lang/*.traineddata.gz

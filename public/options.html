@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>NexIA — Configurações</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <header class="nx-marca">
+    <img src="icons/nexia-48.png" alt="" width="32" height="32">
+    <div>
+      <h1>NexIA</h1>
+      <p>Configurações do assistente</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="cartao">
+      <h2>Provedor de IA</h2>
+      <p class="ajuda">A chave de API é sua, fica armazenada apenas neste navegador (ofuscada, não criptografada de forma forte) e é usada somente pelo processo em segundo plano da extensão.</p>
+      <div class="campo">
+        <label for="provedor">Provedor ativo</label>
+        <select id="provedor">
+          <option value="gemini">Google Gemini</option>
+          <option value="anthropic">Anthropic (Claude)</option>
+          <option value="openai">OpenAI</option>
+        </select>
+      </div>
+      <div class="grade-3">
+        <div class="campo">
+          <label for="modelo-gemini">Modelo Gemini</label>
+          <input id="modelo-gemini" type="text">
+          <label for="chave-gemini">Chave Gemini <span id="ind-gemini" class="ind"></span></label>
+          <input id="chave-gemini" type="password" placeholder="AIza…">
+        </div>
+        <div class="campo">
+          <label for="modelo-anthropic">Modelo Anthropic</label>
+          <input id="modelo-anthropic" type="text">
+          <label for="chave-anthropic">Chave Anthropic <span id="ind-anthropic" class="ind"></span></label>
+          <input id="chave-anthropic" type="password" placeholder="sk-ant-…">
+        </div>
+        <div class="campo">
+          <label for="modelo-openai">Modelo OpenAI</label>
+          <input id="modelo-openai" type="text">
+          <label for="chave-openai">Chave OpenAI <span id="ind-openai" class="ind"></span></label>
+          <input id="chave-openai" type="password" placeholder="sk-…">
+        </div>
+      </div>
+      <div class="grade-2">
+        <div class="campo">
+          <label for="temperatura">Temperatura (0–1)</label>
+          <input id="temperatura" type="number" min="0" max="1" step="0.1">
+        </div>
+        <div class="campo">
+          <label for="max-tokens">Máx. de tokens de saída</label>
+          <input id="max-tokens" type="number" min="1024" max="65536" step="1024">
+        </div>
+      </div>
+    </section>
+
+    <section class="cartao">
+      <h2>Modelos de minuta</h2>
+      <p class="ajuda">Escolha uma pasta local com seus modelos (<code>.docx</code> ou <code>.txt</code>). O conteúdo é indexado localmente (BM25) e nunca sai do seu computador — apenas o modelo escolhido para uma minuta é incluído no prompt.</p>
+      <div class="linha-acoes">
+        <button id="btn-pasta" class="nx-botao">Escolher pasta de modelos</button>
+        <button id="btn-reindexar" class="nx-botao secundario">Reindexar</button>
+        <span id="st-modelos" class="status"></span>
+      </div>
+      <ul id="lista-modelos" class="lista-modelos"></ul>
+    </section>
+
+    <section class="cartao">
+      <h2>Hosts bloqueados</h2>
+      <p class="ajuda">A extensão só é ativada em páginas que parecem ser do PJe (domínios <code>*.jus.br</code>). Liste aqui hosts em que ela deve permanecer desligada, um por linha (ex.: <code>pje.tjxx.jus.br</code>).</p>
+      <textarea id="hosts-bloqueados" rows="4" spellcheck="false"></textarea>
+    </section>
+
+    <section class="cartao perigo">
+      <h2>Dados</h2>
+      <p class="ajuda">Conteúdo de processos e conversas nunca é gravado em disco — vive apenas na memória da aba. O botão abaixo apaga configurações, chaves de API e o índice de modelos.</p>
+      <button id="btn-limpar" class="nx-botao perigoso">Apagar todos os dados da extensão</button>
+    </section>
+
+    <div class="rodape">
+      <button id="btn-salvar" class="nx-botao primario">Salvar configurações</button>
+      <span id="st-salvo" class="status"></span>
+    </div>
+  </main>
+  <script src="options.js"></script>
+</body>
+</html>
