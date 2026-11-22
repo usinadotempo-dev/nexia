@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>NexIA OCR</title>
+    <style>
+      body { font: 13px system-ui, sans-serif; width: 360px; margin: 0; padding: 12px; }
+      h1 { font-size: 14px; margin: 0 0 8px; }
+      .row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+      button { padding: 6px 10px; cursor: pointer; }
+      #meta { font-size: 12px; color: #444; white-space: pre-wrap; margin: 8px 0; }
+      #out { width: 100%; height: 220px; box-sizing: border-box; font-family: ui-monospace, monospace; font-size: 12px; }
+      .ok { color: #0a7a2f; } .err { color: #b00020; }
+    </style>
+  </head>
+  <body>
+    <h1>NexIA OCR — protótipo local</h1>
+    <div class="row">
+      <input type="file" id="file" accept="image/*,application/pdf" />
+      <button id="run" disabled>Rodar OCR</button>
+    </div>
+    <div id="meta">Escolha uma imagem para começar.</div>
+    <textarea id="out" placeholder="Texto extraído aparecerá aqui..." readonly></textarea>
+    <script type="module" src="./popup.ts"></script>
+  </body>
+</html>

@@ -34,10 +34,16 @@ export function montarTxtProcesso(dossie: DossieProcesso): string {
   linhas.push('DOCUMENTOS');
   linhas.push('-'.repeat(72));
   for (const doc of dossie.documentos) {
+    // Documento completado por IA multimodal fica FORA do TXT anonimizado
+    // (a imagem foi enviada ao modelo; ver política de anonimização).
+    if (dossie.anonimizado && doc.completadoPorIa) continue;
+
     linhas.push('');
-    linhas.push(`### Documento id ${doc.id} | ${doc.tipo}${doc.data ? ` | ${doc.data}` : ''}${doc.transcritoPorOcr ? ' | [OCR local]' : ''}`);
+    const marca =
+      doc.statusExtracao === 'ocr' ? ' | [OCR local]' : doc.statusExtracao === 'ia-multimodal' ? ' | [IA multimodal]' : '';
+    linhas.push(`### Documento id ${doc.id} | ${doc.tipo}${doc.data ? ` | ${doc.data}` : ''}${marca}`);
     if (doc.texto) linhas.push(doc.texto);
-    else linhas.push(`[conteúdo indisponível${doc.erro ? `: ${doc.erro}` : ''}]`);
+    else linhas.push(`[documento não extraído${doc.motivoPendencia ? `: ${doc.motivoPendencia}` : ''}]`);
   }
 
   return linhas.join('\n');

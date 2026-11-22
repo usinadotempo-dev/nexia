@@ -1,5 +1,5 @@
 import { LIMITES } from './constantes';
-import type { DossieProcesso, MensagemLLM, NaturezaMinuta, ParteImagem, ParteTexto } from './tipos';
+import type { DossieProcesso, MensagemLLM, NaturezaMinuta, ParteImagem, ParteTexto, RequisicaoLLM } from './tipos';
 
 export const SYSTEM_PROMPT = `Você é o NexIA, assistente de inteligência artificial para sistemas processuais do Poder Judiciário brasileiro.
 
@@ -69,8 +69,10 @@ export function montarPromptMinuta(opcoes: {
 }
 
 /**
- * Monta a primeira mensagem de usuário com o dossiê do processo
- * (texto + páginas-imagem de documentos digitalizados).
+ * Monta a primeira mensagem de usuário com o dossiê do processo.
+ * É sempre TEXTO: o conteúdo dos documentos vem da extração local (texto nativo,
+ * OCR) ou da conclusão multimodal (Fase C). Documentos ainda não extraídos são
+ * apenas anotados — nenhuma imagem crua é enviada ao modelo.
  */
 export function montarMensagemContexto(dossie: DossieProcesso): MensagemLLM {
   const blocos: string[] = [];
@@ -97,26 +99,37 @@ export function montarMensagemContexto(dossie: DossieProcesso): MensagemLLM {
     blocos.push('MOVIMENTAÇÕES (mais recentes ao final):\n' + movs.map((m) => `${m.data} — ${m.descricao}`).join('\n'));
   }
 
-  const imagens: ParteImagem[] = [];
   for (const doc of dossie.documentos) {
     const cabecalho = `--- Documento id ${doc.id} | ${doc.tipo} | ${doc.nome}${doc.data ? ` | ${doc.data}` : ''} ---`;
     if (doc.texto) {
       blocos.push(`${cabecalho}\n${doc.texto}`);
-    } else if (doc.paginasImagem && doc.paginasImagem.length > 0) {
-      blocos.push(`${cabecalho}\n[Documento digitalizado: ${doc.paginasImagem.length} página(s) fornecida(s) como imagem a seguir]`);
-      for (const dataUrl of doc.paginasImagem) {
-        const virgula = dataUrl.indexOf(',');
-        const mediaType = dataUrl.slice(5, dataUrl.indexOf(';'));
-        imagens.push({ tipo: 'imagem', mediaType, dadosBase64: dataUrl.slice(virgula + 1) });
-      }
-    } else if (doc.erro) {
-      blocos.push(`${cabecalho}\n[Conteúdo indisponível: ${doc.erro}]`);
+    } else {
+      blocos.push(`${cabecalho}\n[Documento não extraído${doc.motivoPendencia ? `: ${doc.motivoPendencia}` : ''}]`);
     }
   }
 
-  const texto: ParteTexto = { tipo: 'texto', texto: blocos.join('\n\n') };
-  if (imagens.length === 0) return { papel: 'user', conteudo: texto.texto };
-  return { papel: 'user', conteudo: [texto, ...imagens.slice(0, LIMITES.MAX_IMAGENS)] };
+  return { papel: 'user', conteudo: blocos.join('\n\n') };
+}
+
+/** Fase C — requisição multimodal para transcrever literalmente um documento digitalizado. */
+export function montarRequisicaoTranscricao(doc: { paginasImagem?: string[] }): RequisicaoLLM {
+  const partes: Array<ParteTexto | ParteImagem> = [
+    {
+      tipo: 'texto',
+      texto:
+        'Transcreva integral e literalmente todo o texto legível das imagens a seguir, que são páginas de um documento processual digitalizado. ' +
+        'Preserve a ordem e a estrutura. Não resuma, não comente, não interprete. Devolva apenas a transcrição.'
+    }
+  ];
+  for (const dataUrl of (doc.paginasImagem ?? []).slice(0, LIMITES.MAX_IMAGENS)) {
+    const mediaType = dataUrl.slice(5, dataUrl.indexOf(';'));
+    partes.push({ tipo: 'imagem', mediaType, dadosBase64: dataUrl.slice(dataUrl.indexOf(',') + 1) });
+  }
+  return {
+    system: 'Você é um transcritor fiel de documentos. Devolve apenas a transcrição literal, sem qualquer acréscimo.',
+    mensagens: [{ papel: 'user', conteudo: partes }],
+    temperatura: 0
+  };
 }
 
 export const RESPOSTA_CONTEXTO_ACK =

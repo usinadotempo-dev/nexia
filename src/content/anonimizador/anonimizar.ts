@@ -1,20 +1,19 @@
 /**
  * Anonimização do dossiê — inteiramente local, sem nenhuma chamada de rede.
- * Após a anonimização, apenas o texto anônimo permanece em memória para envio
- * ao LLM; o mapa reverso permite exibir os nomes reais nas respostas, sem que
- * eles jamais saiam da máquina.
+ * A extração (texto nativo/OCR) já ocorreu; aqui apenas substituímos nomes por
+ * papéis processuais e mascaramos PII no texto já disponível. Documentos ainda
+ * pendentes (sem texto) permanecem pendentes e podem ser completados na Fase C.
  */
-import type { DossieProcesso } from '../../shared/tipos';
+import type { DossieProcesso, StatusExtracao } from '../../shared/tipos';
 import { aplicarRegexLocalContado, contagemZerada, type ContagemPII } from './regex-local';
 import { aplicarSubstituicoesContado, montarSubstituicoes, type Substituicao } from './partes-local';
 
 export interface RelatorioDocumento {
   id: string;
   tipo: string;
+  status: StatusExtracao;
   nomes: number;
   pii: number;
-  transcritoPorOcr: boolean;
-  excluido: boolean;
 }
 
 export interface RelatorioAnonimizacao {
@@ -22,22 +21,31 @@ export interface RelatorioAnonimizacao {
   pii: ContagemPII;
   totalPii: number;
   porDocumento: RelatorioDocumento[];
-  digitalizadosTranscritos: number;
-  digitalizadosExcluidos: number;
+  pendentes: number;
 }
 
 export interface ResultadoAnonimizacao {
   /** substituto → nome original, para des-anonimizar respostas na exibição. */
   mapaReverso: Map<string, string>;
+  /** substituições nome→papel, para reanonimizar texto obtido depois (Fase C). */
+  substituicoes: Substituicao[];
   relatorio: RelatorioAnonimizacao;
+}
+
+/** Anonimiza um texto avulso com as substituições já calculadas (Fase C). */
+export function anonimizarTexto(texto: string, substituicoes: Substituicao[]): string {
+  return aplicarRegexLocalContado(aplicarSubstituicoesContado(texto, substituicoes).texto).texto;
 }
 
 function somaPii(c: ContagemPII): number {
   return Object.values(c).reduce((a, b) => a + b, 0);
 }
 
-/** Anonimiza texto acumulando contagens; retorna o texto e quantos itens mascarou. */
-function anonimizarBloco(texto: string, subs: Substituicao[], piiAcum: ContagemPII): { texto: string; nomes: number; pii: number } {
+function anonimizarBloco(
+  texto: string,
+  subs: Substituicao[],
+  piiAcum: ContagemPII
+): { texto: string; nomes: number; pii: number } {
   const nomes = aplicarSubstituicoesContado(texto, subs);
   const antes = somaPii(piiAcum);
   const regex = aplicarRegexLocalContado(nomes.texto, piiAcum);
@@ -53,41 +61,30 @@ export function anonimizarDossie(dossie: DossieProcesso): ResultadoAnonimizacao 
 
   const pii = contagemZerada();
   let nomesMascarados = 0;
-  let transcritos = 0;
-  let excluidos = 0;
+  let pendentes = 0;
   const porDocumento: RelatorioDocumento[] = [];
 
   for (const doc of dossie.documentos) {
     let nomesDoc = 0;
     let piiDoc = 0;
-    let excluido = false;
 
     if (doc.texto) {
       const r = anonimizarBloco(doc.texto, substituicoes, pii);
       doc.texto = r.texto;
-      nomesDoc += r.nomes;
-      piiDoc += r.pii;
+      nomesDoc = r.nomes;
+      piiDoc = r.pii;
+    } else {
+      pendentes++;
     }
     doc.nome = aplicarSubstituicoesContado(doc.nome, substituicoes).texto;
-
-    // Documentos digitalizados não transcritos por OCR não podem ser
-    // anonimizados: são EXCLUÍDOS do contexto quando a anonimização está ativa.
-    if (doc.paginasImagem && doc.paginasImagem.length > 0) {
-      doc.paginasImagem = undefined;
-      if (!doc.texto) doc.erro = 'documento digitalizado sem OCR — excluído do contexto pela anonimização';
-      excluido = !doc.texto;
-      if (excluido) excluidos++;
-    }
-    if (doc.transcritoPorOcr) transcritos++;
 
     nomesMascarados += nomesDoc;
     porDocumento.push({
       id: doc.id,
       tipo: doc.tipo,
+      status: doc.statusExtracao ?? 'pendente',
       nomes: nomesDoc,
-      pii: piiDoc,
-      transcritoPorOcr: Boolean(doc.transcritoPorOcr),
-      excluido
+      pii: piiDoc
     });
   }
 
@@ -107,14 +104,8 @@ export function anonimizarDossie(dossie: DossieProcesso): ResultadoAnonimizacao 
 
   return {
     mapaReverso,
-    relatorio: {
-      nomesMascarados,
-      pii,
-      totalPii: somaPii(pii),
-      porDocumento,
-      digitalizadosTranscritos: transcritos,
-      digitalizadosExcluidos: excluidos
-    }
+    substituicoes,
+    relatorio: { nomesMascarados, pii, totalPii: somaPii(pii), porDocumento, pendentes }
   };
 }
 

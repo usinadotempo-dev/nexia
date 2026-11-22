@@ -1,5 +1,5 @@
-/** Sidebar do NexIA: cabeçalho, status, abas Chat / Resumir / Minutar / Anonimizar. */
-import type { NaturezaMinuta } from '@shared/tipos';
+/** Sidebar do NexIA: cabeçalho, status, abas Chat / Resumir / Minutar / Documentos / Anonimizar. */
+import type { NaturezaMinuta, StatusExtracao } from '@shared/tipos';
 import { NATUREZAS } from '@shared/prompts';
 import type { RelatorioAnonimizacao } from '../anonimizador/anonimizar';
 import { botao, el, ICONE_NEXIA_SVG, renderizarMarkdown } from './componentes';
@@ -14,7 +14,33 @@ export interface AcoesUi {
   aoGerarMinuta(natureza: NaturezaMinuta, instrucoes: string): void;
   aoRefinarMinuta(instrucoes: string): void;
   aoCopiarMinuta(): void;
+  aoExtrair(): void;
+  aoCompletarSelecionados(ids: string[]): void;
 }
+
+export interface DocumentoUI {
+  id: string;
+  tipo: string;
+  status: StatusExtracao;
+  motivo?: string;
+  completavel: boolean;
+}
+
+export interface ResumoDocsUI {
+  textoNativo: number;
+  ocr: number;
+  multimodal: number;
+  pendentes: number;
+  erros: number;
+}
+
+const ROTULO_STATUS: Record<StatusExtracao, string> = {
+  'texto-nativo': 'texto nativo',
+  ocr: 'OCR local',
+  'ia-multimodal': 'IA multimodal',
+  pendente: 'pendente',
+  erro: 'erro'
+};
 
 const ROTULOS_PII: Record<string, string> = {
   processo: 'Nº de processo',
@@ -46,6 +72,10 @@ export class SidebarNexia {
   private progressoAnon: HTMLElement;
   private relatorioAnon: HTMLElement;
   private botaoBaixarTxt: HTMLButtonElement;
+  private resumoDocs: HTMLElement;
+  private listaDocs: HTMLElement;
+  private botaoExtrair: HTMLButtonElement;
+  private botaoCompletar: HTMLButtonElement;
   private botoesOcupaveis: HTMLButtonElement[] = [];
 
   constructor(private acoes: AcoesUi) {
@@ -74,6 +104,7 @@ export class SidebarNexia {
       ['chat', 'Chat'],
       ['resumir', 'Resumir'],
       ['minutar', 'Minutar'],
+      ['documentos', 'Documentos'],
       ['anonimizar', 'Anonimizar']
     ] as const) {
       const abaBotao = el('button', { class: 'nx-aba', 'data-aba': id }, rotulo);
@@ -144,6 +175,29 @@ export class SidebarNexia {
       el('div', { class: 'nx-formulario' }, this.instrucoesRefino, botaoRefinar)
     );
 
+    // --- painel Documentos ---
+    this.botaoExtrair = botao('Extrair documentos do processo', 'primario', () => this.acoes.aoExtrair());
+    this.botaoCompletar = botao('Completar selecionados com IA', '', () =>
+      this.acoes.aoCompletarSelecionados(this.documentosSelecionados())
+    );
+    this.botaoCompletar.disabled = true;
+    this.resumoDocs = el('div', { class: 'nx-info-modelo' });
+    this.listaDocs = el('div', { class: 'nx-saida', 'data-vazio': 'Extraia o processo para ver o estado de cada documento.' });
+    paineis['documentos']!.append(
+      el(
+        'div',
+        { class: 'nx-formulario' },
+        el(
+          'label',
+          {},
+          'Extração local (texto nativo + OCR, sem IA). Documentos que não puderam ser lidos localmente podem ser completados com IA multimodal — isso envia a imagem do documento ao modelo.'
+        ),
+        el('div', { class: 'nx-ferramentas', style: 'padding:0;border:0' }, this.botaoExtrair, this.botaoCompletar),
+        this.resumoDocs
+      ),
+      this.listaDocs
+    );
+
     // --- painel Anonimizar ---
     this.botaoAnonimizarAba = botao('Extrair e anonimizar processo', 'primario', () => this.acoes.aoAnonimizar());
     this.botaoBaixarTxt = botao('Baixar TXT anonimizado', '', () => this.acoes.aoBaixarTxt());
@@ -171,7 +225,8 @@ export class SidebarNexia {
       botaoMinutar,
       botaoRefinar,
       this.botaoAnonimizarChat,
-      this.botaoAnonimizarAba
+      this.botaoAnonimizarAba,
+      this.botaoExtrair
     ];
 
     this.elemento = el('aside', { class: 'nx-sidebar' }, cabecalho, this.statusEl, abas, ...Object.values(paineis));
@@ -212,6 +267,7 @@ export class SidebarNexia {
     this.chipAnonimo.textContent = 'autos anonimizados';
     this.chipAnonimo.classList.add('anonimizado');
     for (const b of [this.botaoAnonimizarChat, this.botaoAnonimizarAba]) {
+      b.classList.remove('primario');
       b.classList.add('ativo');
       b.disabled = true;
       b.textContent = 'Processo anonimizado ✓';
@@ -273,6 +329,39 @@ export class SidebarNexia {
     this.saidaMinuta.innerHTML = renderizarMarkdown(texto);
     this.saidaMinuta.classList.toggle('gerando', gerando);
     this.saidaMinuta.scrollTop = this.saidaMinuta.scrollHeight;
+  }
+
+  // ----- documentos (extração) -----
+  renderizarDocumentos(itens: DocumentoUI[], resumo: ResumoDocsUI): void {
+    this.resumoDocs.textContent =
+      `${resumo.textoNativo} texto nativo · ${resumo.ocr} OCR · ${resumo.multimodal} IA · ` +
+      `${resumo.pendentes} pendente(s) · ${resumo.erros} erro(s)`;
+
+    this.listaDocs.textContent = '';
+    for (const item of itens) {
+      const linha = el('label', { class: 'nx-doc-linha' });
+      if (item.completavel) {
+        const chk = el('input', { type: 'checkbox', 'data-id': item.id });
+        chk.addEventListener('change', () => this.atualizarBotaoCompletar());
+        linha.append(chk);
+      } else {
+        linha.append(el('span', { class: 'nx-doc-espaco' }));
+      }
+      const texto = `doc ${item.id} · ${item.tipo} · ${ROTULO_STATUS[item.status]}${item.motivo ? ` (${item.motivo})` : ''}`;
+      linha.append(el('span', { class: `nx-doc-txt nx-doc-${item.status}` }, texto));
+      this.listaDocs.append(linha);
+    }
+    this.atualizarBotaoCompletar();
+  }
+
+  private atualizarBotaoCompletar(): void {
+    this.botaoCompletar.disabled = this.documentosSelecionados().length === 0;
+  }
+
+  documentosSelecionados(): string[] {
+    return [...this.listaDocs.querySelectorAll<HTMLInputElement>('input[type="checkbox"]:checked')].map(
+      (c) => c.dataset['id'] ?? ''
+    );
   }
 
   definirModeloUsado(nome: string | null): void {

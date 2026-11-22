@@ -37,7 +37,8 @@ export async function extrairDocumentos(documentos: DocumentoProcesso[], opcoes:
 
   const executar = async (doc: DocumentoProcesso): Promise<void> => {
     if (totalChars >= LIMITES.TOTAL_CHARS && totalImagens >= LIMITES.MAX_IMAGENS) {
-      doc.erro = 'fora do limite de contexto';
+      doc.statusExtracao = 'pendente';
+      doc.motivoPendencia = 'fora do limite de contexto';
       return;
     }
     try {
@@ -45,16 +46,15 @@ export async function extrairDocumentos(documentos: DocumentoProcesso[], opcoes:
       if (doc.texto) {
         if (totalChars + doc.texto.length > LIMITES.TOTAL_CHARS) {
           doc.texto = doc.texto.slice(0, Math.max(0, LIMITES.TOTAL_CHARS - totalChars));
-          if (doc.texto.length === 0) {
-            doc.texto = undefined;
-            doc.erro = 'fora do limite de contexto';
-          }
+          if (doc.texto.length === 0) doc.texto = undefined;
         }
         totalChars += doc.texto?.length ?? 0;
       }
       totalImagens += doc.paginasImagem?.length ?? 0;
     } catch (erro) {
       doc.erro = erro instanceof Error ? erro.message : String(erro);
+      doc.statusExtracao = 'erro';
+      doc.motivoPendencia = `falha no download/leitura: ${doc.erro}`;
       log.aviso('Falha ao extrair documento', doc.id, doc.erro);
     } finally {
       feitos++;
@@ -97,7 +97,7 @@ function ordenarPorPrioridade(documentos: DocumentoProcesso[]): DocumentoProcess
 
 async function extrairUm(doc: DocumentoProcesso, opcoes: OpcoesExtracao, orcamentoImagens: number): Promise<void> {
   const url = urlDownloadDocumento(opcoes.origem, doc.id);
-  let blob = await baixarComFallback(url, opcoes.auth);
+  let blob = await baixarComFallback(url, opcoes.auth, doc.id);
 
   if (ehPdf(blob) || (await sniffPdf(blob))) {
     await extrairPdf(doc, blob, orcamentoImagens);
@@ -113,16 +113,25 @@ async function extrairUm(doc: DocumentoProcesso, opcoes: OpcoesExtracao, orcamen
       return;
     }
     doc.texto = limparHtml(await blob.text());
+    doc.statusExtracao = doc.texto && doc.texto.length >= 10 ? 'texto-nativo' : 'pendente';
     return;
   }
   doc.texto = limparHtml(texto);
   if (!doc.texto || doc.texto.length < 10) {
     doc.texto = undefined;
-    doc.erro = 'conteúdo vazio ou não textual';
+    doc.statusExtracao = 'pendente';
+    doc.motivoPendencia = 'conteúdo vazio ou não textual';
+  } else {
+    doc.statusExtracao = 'texto-nativo';
   }
 }
 
-async function baixarComFallback(url: string, auth: SnapshotAuth | null): Promise<Blob> {
+function esperar(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Fetch same-origin (isolated world). Devolve o Blob só se vier com bytes. */
+async function tentarFetchDireto(url: string, auth: SnapshotAuth | null): Promise<Blob | null> {
   try {
     const resposta = await fetch(url, { headers: montarCabecalhos(auth), credentials: 'include' });
     if (resposta.ok) {
@@ -130,9 +139,91 @@ async function baixarComFallback(url: string, auth: SnapshotAuth | null): Promis
       if (blob.size > 0) return blob;
     }
   } catch {
-    /* cai para a ponte */
+    /* segue para o próximo nível */
   }
-  return baixarViaMain(url);
+  return null;
+}
+
+/** Fetch pelo world MAIN (page world). Devolve null em vez de lançar em 0 bytes/erro. */
+async function tentarViaMain(url: string): Promise<Blob | null> {
+  try {
+    const blob = await baixarViaMain(url);
+    return blob.size > 0 ? blob : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Baixa um documento com três níveis de fallback (contrato do PJe Legacy):
+ *   1. fetch direto same-origin (~90% dos docs);
+ *   2. fetch pelo world MAIN (documentos que voltam 0 bytes no isolated world);
+ *   3. ATIVAÇÃO na árvore + retry — alguns docs (2-3 por processo) só são
+ *      servidos depois de "ativados": o clique no nó dispara o callback A4J que
+ *      libera o binário. É o que faltava e causava "HTTP 200, 0 bytes".
+ */
+async function baixarComFallback(url: string, auth: SnapshotAuth | null, docId: string): Promise<Blob> {
+  const direto = await tentarFetchDireto(url, auth);
+  if (direto) return direto;
+
+  const main = await tentarViaMain(url);
+  if (main) return main;
+
+  // Último recurso: ativar o documento no PJe e retentar (fetch direto → MAIN).
+  const ativado = await ativarDocumentoNoPje(docId);
+  if (ativado) {
+    await esperar(2000); // aguarda o callback A4J concluir no servidor
+    const retryDireto = await tentarFetchDireto(url, auth);
+    if (retryDireto) return retryDireto;
+    const retryMain = await tentarViaMain(url);
+    if (retryMain) return retryMain;
+  }
+
+  throw new Error(
+    `Download vazio após fetch direto, MAIN world e ativação no PJe${ativado ? '' : ' (nó não encontrado na árvore)'}`
+  );
+}
+
+/**
+ * Ativa um documento na árvore de autos do PJe: procura o nó cujo texto/onclick/href
+ * contém o id do documento (inclusive dentro de iframes same-origin) e clica nele,
+ * disparando o callback A4J que faz o servidor liberar o binário.
+ */
+async function ativarDocumentoNoPje(docId: string): Promise<boolean> {
+  const acharEClicar = (root: Document): boolean => {
+    const candidatos = root.querySelectorAll<HTMLElement>(
+      'a, span[onclick], div[onclick], td[onclick], .rich-tree-node, .rf-trn'
+    );
+    for (const el of Array.from(candidatos)) {
+      const texto = el.textContent ?? '';
+      const onclick = el.getAttribute('onclick') ?? '';
+      const href = el.getAttribute('href') ?? '';
+      const temId =
+        texto.includes(`${docId} -`) || texto.includes(`${docId} –`) ||
+        onclick.includes(docId) || href.includes(docId);
+      if (temId) {
+        const rect = el.getBoundingClientRect();
+        // Evita clicar em containers gigantes (a linha do nó tem altura modesta).
+        if (rect.width > 0 && rect.height > 0 && rect.height < 200) {
+          el.click();
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  if (acharEClicar(document)) return true;
+  const frames = document.querySelectorAll<HTMLIFrameElement>('iframe, frame');
+  for (const frame of Array.from(frames)) {
+    try {
+      const childDoc = frame.contentDocument;
+      if (childDoc?.body && acharEClicar(childDoc)) return true;
+    } catch {
+      /* iframe cross-origin: ignora */
+    }
+  }
+  return false;
 }
 
 function ehPdf(blob: Blob): boolean {
@@ -162,12 +253,16 @@ async function extrairPdf(doc: DocumentoProcesso, blob: Blob, orcamentoImagens: 
     const digitalizado = texto.length < 60 * pdf.numPages;
     if (!digitalizado) {
       doc.texto = texto.slice(0, LIMITES.POR_DOCUMENTO_CHARS);
+      doc.statusExtracao = 'texto-nativo';
       return;
     }
 
+    // Documento imagem-pura: renderiza páginas para OCR local (Fase A) ou
+    // conclusão multimodal (Fase C). Fica PENDENTE até ser transcrito.
     const paginasParaRender = Math.min(pdf.numPages, orcamentoImagens);
     if (paginasParaRender <= 0) {
-      doc.erro = 'digitalizado, sem orçamento de imagens restante';
+      doc.statusExtracao = 'pendente';
+      doc.motivoPendencia = 'documento digitalizado sem orçamento de imagens restante';
       return;
     }
     const imagens: string[] = [];
@@ -176,6 +271,11 @@ async function extrairPdf(doc: DocumentoProcesso, blob: Blob, orcamentoImagens: 
     }
     doc.paginasImagem = imagens;
     if (texto.length > 0) doc.texto = texto;
+    doc.statusExtracao = 'pendente';
+    doc.motivoPendencia =
+      paginasParaRender < pdf.numPages
+        ? `documento digitalizado (${paginasParaRender} de ${pdf.numPages} páginas)`
+        : 'documento digitalizado (imagem)';
   } finally {
     await pdf.destroy();
   }

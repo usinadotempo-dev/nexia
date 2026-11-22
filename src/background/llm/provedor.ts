@@ -1,4 +1,4 @@
-import type { RequisicaoLLM } from '@shared/tipos';
+import type { ParteChamada, RequisicaoLLM } from '@shared/tipos';
 
 export interface OpcoesGeracao {
   modelo: string;
@@ -6,20 +6,45 @@ export interface OpcoesGeracao {
   sinal?: AbortSignal;
 }
 
+/** Ferramenta no formato neutro (convertida por provedor). */
+export interface FerramentaLLM {
+  nome: string;
+  descricao: string;
+  esquema: Record<string, unknown>;
+}
+
+export interface RespostaComFerramentas {
+  texto: string;
+  chamadas: ParteChamada[];
+}
+
 export interface ProvedorLLM {
-  /** Gera com streaming; aoTrecho recebe cada fragmento de texto. Retorna o texto completo. */
+  /** Gera com streaming; aoTrecho recebe cada fragmento. Retorna o texto completo. */
   gerarStream(req: RequisicaoLLM, opcoes: OpcoesGeracao, aoTrecho: (texto: string) => void): Promise<string>;
-  /** Geração sem streaming. */
   gerar(req: RequisicaoLLM, opcoes: OpcoesGeracao): Promise<string>;
+  /** Uma rodada (sem streaming) em que o modelo pode pedir ferramentas. */
+  gerarComFerramentas(req: RequisicaoLLM, opcoes: OpcoesGeracao, ferramentas: FerramentaLLM[]): Promise<RespostaComFerramentas>;
 }
 
 export async function extrairErroHttp(resposta: Response, provedor: string): Promise<Error> {
   let detalhe = '';
   try {
-    const corpo = (await resposta.json()) as { error?: { message?: string } };
-    detalhe = corpo.error?.message ?? '';
+    const corpo = (await resposta.json()) as { error?: { message?: string } | string };
+    detalhe = typeof corpo.error === 'string' ? corpo.error : corpo.error?.message ?? '';
   } catch {
     /* corpo não-JSON */
   }
-  return new Error(`${provedor}: HTTP ${resposta.status}${detalhe ? ` — ${detalhe}` : ''}`);
+  const dica =
+    resposta.status === 401 || resposta.status === 403
+      ? ' (verifique a chave de API nas opções)'
+      : resposta.status === 429
+        ? ' (limite de uso do provedor atingido; aguarde e tente de novo)'
+        : '';
+  return new Error(`${provedor}: HTTP ${resposta.status}${detalhe ? ` — ${detalhe}` : ''}${dica}`);
+}
+
+let sequencial = 0;
+export function novoIdChamada(prefixo: string): string {
+  sequencial = (sequencial + 1) % 1_000_000;
+  return `${prefixo}_${Date.now().toString(36)}_${sequencial}`;
 }

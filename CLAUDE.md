@@ -1,10 +1,12 @@
 # NexIA
 
-Assistente inteligente para sistemas processuais (foco: PJe), em formato de **extensão de navegador** (Chrome Manifest V3).
+IA com proteção de dados para profissionais de **qualquer área** (jurídico, contabilidade, saúde, engenharia/arquitetura, RH/DP, geral), em formato de **extensão de navegador** (Chrome Manifest V3) com painel lateral. O PJe é um conector especializado, não mais o foco único.
 
 ## Identidade do projeto
 
-- **Natureza:** Produto — versão generalizada do pAIdegua para uso fora da JFCE (outros tribunais e instituições).
+- **Natureza:** Produto comercial multiárea. Nasceu como versão generalizada do pAIdegua para uso fora da JFCE.
+- **Identidade visual:** preto e branco, minimalista, com UX cuidadosa (estados com texto/ícone, nunca só cor; foco visível; claro/escuro automático). Distinta do pAIdegua.
+- **Backend:** nenhum por decisão (ver `docs/visao-multiarea.md` — gatilhos para Cloudflare D1/R2). Pseudonimização e mapa de reidentificação sempre no cliente.
 - **Relação com o pAIdegua:** código novo e independente; herda o *conhecimento* (contratos do PJe, padrões de coleta, arquitetura MV3), não o código. O pAIdegua continua interno à JFCE.
 - **Referência ao pAIdegua:** o repositório está em `C:\Users\vsousaesilva\OneDrive - Justica Federal no Ceara\Área de Trabalho\Claude JF\paidegua` — pode ser lido para consulta (contratos do PJe, padrões de coleta SSR, page world, etiquetas), mas nunca copiado literalmente nem referenciado como dependência.
 - **Idioma:** Português (Brasil). Commits em português, descritivos, sem emojis.
@@ -27,3 +29,4 @@ Máquina sem Node/Git/PowerShell no PATH. Executáveis em `C:\Portatil\` — inv
 ## Histórico
 
 - 21/07/2026 — projeto criado; definidos nome, escopo (produto multi-tribunal) e formato (extensão MV3).
+- 22/11/2026 — v0.2.0: virada multiárea (painel lateral, 6 áreas com receitas, anonimizador universal sem IA com guarda de saída, 18 consultas a APIs públicas com function calling nos 3 provedores, cálculos determinísticos, saída .docx), identidade P&B e ícone novo. Testes: `npm test` (node --test, sem dependências).

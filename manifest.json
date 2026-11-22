@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "NexIA OCR (protótipo)",
+  "version": "0.1.0",
+  "description": "Banco de provas: OCR 100% local com PaddleOCR / ONNX Runtime Web (WebGPU→WASM).",
+  "permissions": ["offscreen", "storage"],
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_title": "NexIA OCR"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "src/offscreen.html", "chunks/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,194 +1,20 @@
-:host {
-  --nx-indigo: #4F46E5;
-  --nx-violeta: #7C3AED;
-  --nx-ciano: #22D3EE;
-  --nx-grafite: #1B1E28;
-  --nx-grafite-2: #262A38;
-  --nx-borda: #333849;
-  --nx-texto: #E7E9F0;
-  --nx-texto-fraco: #9AA0B4;
-  --nx-ok: #34D399;
-  --nx-erro: #F87171;
-  all: initial;
-}
+/* Botão flutuante do NexIA no PJe — identidade P&B, isolado por Shadow DOM. */
+:host { all: initial; }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
 
-/* ---------- FAB ---------- */
 .nx-fab {
-  position: fixed;
-  right: 22px;
-  bottom: 22px;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  border: 0;
-  cursor: pointer;
-  z-index: 2147483646;
-  background: linear-gradient(135deg, var(--nx-indigo), var(--nx-violeta));
-  box-shadow: 0 4px 18px rgba(79, 70, 229, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.15s ease;
+  position: fixed; right: 20px; bottom: 20px; z-index: 2147483646;
+  display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px 0 12px;
+  border-radius: 999px; border: 1px solid #0a0a0a; background: #0a0a0a; color: #fff;
+  font-size: 13px; font-weight: 600; cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  transition: transform 0.12s ease;
 }
-.nx-fab:hover { transform: scale(1.08); }
-.nx-fab svg { width: 32px; height: 32px; }
+.nx-fab:hover { transform: translateY(-1px); }
+.nx-fab:focus-visible { outline: 2px solid #0a0a0a; outline-offset: 3px; }
+.nx-fab svg { width: 22px; height: 22px; flex: none; }
 
-/* ---------- Sidebar ---------- */
-.nx-sidebar {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 430px;
-  max-width: 96vw;
-  z-index: 2147483647;
-  background: var(--nx-grafite);
-  color: var(--nx-texto);
-  border-left: 1px solid var(--nx-borda);
-  box-shadow: -6px 0 30px rgba(0, 0, 0, 0.45);
-  display: flex;
-  flex-direction: column;
-  font-size: 13.5px;
-  transform: translateX(105%);
-  transition: transform 0.2s ease;
-}
-.nx-sidebar.aberta { transform: translateX(0); }
-
-.nx-cabecalho {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background: linear-gradient(135deg, var(--nx-indigo), var(--nx-violeta));
-}
-.nx-cabecalho svg { width: 26px; height: 26px; flex: none; }
-.nx-cabecalho .titulo { font-weight: 700; font-size: 16px; letter-spacing: 0.3px; }
-.nx-cabecalho .espaco { flex: 1; }
-.nx-chip {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.25);
-  color: #d9dcff;
-  white-space: nowrap;
-}
-.nx-chip.anonimizado { background: var(--nx-ok); color: #052e22; font-weight: 700; }
-.nx-fechar {
-  border: 0;
-  background: transparent;
-  color: #fff;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 6px;
-}
-.nx-fechar:hover { background: rgba(0, 0, 0, 0.25); }
-
-.nx-status {
-  padding: 6px 14px;
-  font-size: 12px;
-  color: var(--nx-texto-fraco);
-  border-bottom: 1px solid var(--nx-borda);
-  min-height: 27px;
-}
-.nx-status.erro { color: var(--nx-erro); }
-
-.nx-abas { display: flex; border-bottom: 1px solid var(--nx-borda); }
-.nx-aba {
-  flex: 1;
-  padding: 10px 6px;
-  border: 0;
-  background: transparent;
-  color: var(--nx-texto-fraco);
-  font-weight: 600;
-  font-size: 13px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-}
-.nx-aba.ativa { color: var(--nx-ciano); border-bottom-color: var(--nx-ciano); }
-.nx-aba:hover:not(.ativa) { color: var(--nx-texto); }
-
-.nx-painel { flex: 1; display: none; flex-direction: column; min-height: 0; }
-.nx-painel.ativo { display: flex; }
-
-/* ---------- Chat ---------- */
-.nx-mensagens { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-.nx-bolha { max-width: 92%; padding: 9px 12px; border-radius: 12px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
-.nx-bolha.usuario { align-self: flex-end; background: var(--nx-indigo); color: #fff; border-bottom-right-radius: 4px; }
-.nx-bolha.assistente { align-self: flex-start; background: var(--nx-grafite-2); border: 1px solid var(--nx-borda); border-bottom-left-radius: 4px; }
-.nx-bolha.assistente.gerando::after { content: "▍"; color: var(--nx-ciano); animation: nx-piscar 1s infinite; }
-@keyframes nx-piscar { 50% { opacity: 0; } }
-.nx-bolha code { background: rgba(0,0,0,0.3); padding: 1px 4px; border-radius: 4px; font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
-.nx-bolha strong { font-weight: 700; }
-
-.nx-ferramentas { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--nx-borda); flex-wrap: wrap; }
-.nx-compositor { display: flex; gap: 8px; padding: 10px 12px 12px; }
-.nx-compositor textarea {
-  flex: 1;
-  resize: none;
-  background: var(--nx-grafite-2);
-  border: 1px solid var(--nx-borda);
-  border-radius: 10px;
-  color: var(--nx-texto);
-  padding: 9px 11px;
-  font-size: 13.5px;
-  min-height: 42px;
-  max-height: 140px;
-}
-.nx-compositor textarea:focus { outline: 2px solid var(--nx-indigo); border-color: transparent; }
-
-/* ---------- Painéis Resumir/Minutar ---------- */
-.nx-formulario { padding: 12px; display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--nx-borda); }
-.nx-formulario label { font-size: 12px; color: var(--nx-texto-fraco); }
-.nx-formulario select, .nx-formulario textarea {
-  background: var(--nx-grafite-2);
-  border: 1px solid var(--nx-borda);
-  border-radius: 8px;
-  color: var(--nx-texto);
-  padding: 8px 10px;
-  font-size: 13px;
-  width: 100%;
-}
-.nx-formulario select:focus, .nx-formulario textarea:focus { outline: 2px solid var(--nx-indigo); border-color: transparent; }
-.nx-info-modelo { font-size: 12px; color: var(--nx-texto-fraco); }
-.nx-info-modelo b { color: var(--nx-ciano); }
-
-.nx-saida { flex: 1; overflow-y: auto; padding: 12px; line-height: 1.55; white-space: pre-wrap; word-wrap: break-word; }
-.nx-saida:empty::before { content: attr(data-vazio); color: var(--nx-texto-fraco); font-style: italic; }
-.nx-saida.gerando::after { content: "▍"; color: var(--nx-ciano); animation: nx-piscar 1s infinite; }
-
-/* ---------- Botões ---------- */
-.nx-botao {
-  padding: 8px 12px;
-  border: 1px solid var(--nx-borda);
-  border-radius: 10px;
-  background: var(--nx-grafite-2);
-  color: var(--nx-texto);
-  font-weight: 600;
-  font-size: 12.5px;
-  cursor: pointer;
-}
-.nx-botao:hover { border-color: var(--nx-ciano); color: var(--nx-ciano); }
-.nx-botao.primario { background: var(--nx-ciano); color: #06222b; border: 0; }
-.nx-botao.primario:hover { filter: brightness(1.12); color: #06222b; }
-.nx-botao:disabled { opacity: 0.5; cursor: default; }
-.nx-botao.ativo { border-color: var(--nx-ok); color: var(--nx-ok); }
-
-/* ---------- Toast ---------- */
 .nx-toast {
-  position: fixed;
-  bottom: 90px;
-  right: 22px;
-  z-index: 2147483647;
-  background: var(--nx-grafite-2);
-  color: var(--nx-texto);
-  border: 1px solid var(--nx-borda);
-  border-left: 3px solid var(--nx-ciano);
-  border-radius: 10px;
-  padding: 10px 14px;
-  max-width: 320px;
-  font-size: 13px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  position: fixed; right: 20px; bottom: 74px; z-index: 2147483647; max-width: 320px;
+  background: #0a0a0a; color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.45;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
-.nx-toast.erro { border-left-color: var(--nx-erro); }

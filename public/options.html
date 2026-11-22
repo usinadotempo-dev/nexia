@@ -29,19 +29,19 @@
       <div class="grade-3">
         <div class="campo">
           <label for="modelo-gemini">Modelo Gemini</label>
-          <input id="modelo-gemini" type="text">
+          <select id="modelo-gemini"></select>
           <label for="chave-gemini">Chave Gemini <span id="ind-gemini" class="ind"></span></label>
           <input id="chave-gemini" type="password" placeholder="AIza…">
         </div>
         <div class="campo">
           <label for="modelo-anthropic">Modelo Anthropic</label>
-          <input id="modelo-anthropic" type="text">
+          <select id="modelo-anthropic"></select>
           <label for="chave-anthropic">Chave Anthropic <span id="ind-anthropic" class="ind"></span></label>
           <input id="chave-anthropic" type="password" placeholder="sk-ant-…">
         </div>
         <div class="campo">
           <label for="modelo-openai">Modelo OpenAI</label>
-          <input id="modelo-openai" type="text">
+          <select id="modelo-openai"></select>
           <label for="chave-openai">Chave OpenAI <span id="ind-openai" class="ind"></span></label>
           <input id="chave-openai" type="password" placeholder="sk-…">
         </div>
@@ -52,8 +52,8 @@
           <input id="temperatura" type="number" min="0" max="1" step="0.1">
         </div>
         <div class="campo">
-          <label for="max-tokens">Máx. de tokens de saída</label>
-          <input id="max-tokens" type="number" min="1024" max="65536" step="1024">
+          <label for="max-tokens">Máx. de tokens de saída <span id="teto-tokens" class="ind"></span></label>
+          <input id="max-tokens" type="number" min="1024" step="1024">
         </div>
       </div>
     </section>

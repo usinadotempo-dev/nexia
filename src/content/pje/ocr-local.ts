@@ -1,15 +1,20 @@
 /**
- * OCR local com Tesseract (WASM), executado dentro do navegador.
+ * OCR local — PP-OCR (detecção DB + reconhecimento CTC) via ONNX Runtime Web,
+ * WebGPU→WASM, executado no Offscreen Document da extensão.
  *
- * É o único caminho de leitura de documentos digitalizados compatível com a
- * regra do CNJ: a imagem nunca sai da máquina — o texto é reconhecido aqui e
- * só depois é anonimizado. Todos os artefatos (worker, core WASM, idioma
- * português) são carregados de dentro da extensão (offline).
+ * Substitui o Tesseract.js: num lote real de digitalizações ruins, o PP-OCR leu
+ * documentos que o Tesseract marcava como "sem texto reconhecível" (ver HANDOFF do
+ * protótipo). É determinístico (sem alucinação) e compatível com a regra CNJ/LGPD:
+ * a imagem nunca sai da máquina — o texto é reconhecido localmente e só depois
+ * anonimizado. Nada da imagem é logado.
  *
- * Requer que `assets/tesseract/lang/por.traineddata` exista no build (ver README)
- * e `wasm-unsafe-eval` na CSP de extension_pages.
+ * A inferência NÃO roda aqui (content script, sujeito à CSP da página do PJe) nem
+ * no service worker (pode ser morto): este motor apenas manda cada página (dataURL)
+ * ao background, que garante o offscreen e faz o relay. Ver `background/index.ts`
+ * (canal OCR_PAGINA) e `offscreen/offscreen.ts` (motor PP-OCR).
  */
-import { createWorker } from 'tesseract.js';
+import { enviar } from '@shared/mensagens';
+import type { RespostaOcrPagina } from '@shared/mensagens';
 
 export interface MotorOcr {
   transcrever(paginas: string[], aoPagina?: (feita: number, total: number) => void): Promise<string>;
@@ -17,27 +22,23 @@ export interface MotorOcr {
 }
 
 export async function criarMotorOcr(): Promise<MotorOcr> {
-  const worker = await createWorker('por', 1, {
-    workerPath: chrome.runtime.getURL('libs/tesseract/worker.min.js'),
-    corePath: chrome.runtime.getURL('libs/tesseract'),
-    langPath: chrome.runtime.getURL('libs/tesseract/lang'),
-    gzip: false,
-    workerBlobURL: false
-  });
-
+  // Não há worker para inicializar aqui: o serviço PP-OCR vive no offscreen e é
+  // criado sob demanda pelo background (ficando "quente" entre páginas). A 1ª
+  // página paga o custo de carregar os modelos; as seguintes são rápidas.
   return {
     async transcrever(paginas, aoPagina) {
       const partes: string[] = [];
       for (let i = 0; i < paginas.length; i++) {
-        const { data } = await worker.recognize(paginas[i]!);
-        const texto = data.text.replace(/[ \t]+/g, ' ').trim();
+        const resp = await enviar<RespostaOcrPagina>('OCR_PAGINA', { imagem: paginas[i]! });
+        const texto = (resp?.texto ?? '').replace(/[ \t]+/g, ' ').trim();
         if (texto) partes.push(texto);
         aoPagina?.(i + 1, paginas.length);
       }
       return partes.join('\n\n');
     },
     async destruir() {
-      await worker.terminate();
+      // O offscreen é reaproveitado entre extrações; não o fechamos aqui para não
+      // pagar o warm-up de novo a cada documento. O Chrome o recolhe com o SW.
     }
   };
 }

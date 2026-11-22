@@ -1,245 +1,110 @@
 /**
- * Entry do content script (isolated world).
- * Em todos os frames: relay do snapshot de auth capturado no page world.
- * No frame principal (se a página parecer PJe e o host não estiver bloqueado):
- * monta a UI e orquestra coleta, anonimização, chat, resumo e minuta.
+ * Conector PJe (content script, isolated world).
+ * - Em todos os frames: repassa ao service worker o snapshot de auth capturado no page world.
+ * - No frame principal de uma página do PJe: responde ao painel (STATUS_ABA), coleta o
+ *   processo sob demanda (porta nexia-pje) e mostra um botão discreto "Abrir no NexIA".
+ * A interface de trabalho vive no painel lateral (multiárea); aqui não há UI pesada.
  */
+import { PORTA_PJE } from '@shared/constantes';
 import { log } from '@shared/log';
-import { enviar, type RespostaConfig } from '@shared/mensagens';
-import { montarMensagemContexto, RESPOSTA_CONTEXTO_ACK, SYSTEM_PROMPT } from '@shared/prompts';
-import type { DossieProcesso, MensagemLLM, NaturezaMinuta, RequisicaoLLM } from '@shared/tipos';
-import { desanonimizar } from './anonimizador/anonimizar';
-import { anonimizarProcesso } from './anonimizador/fluxo';
-import { baixarTxtProcesso } from './anonimizador/txt-processo';
-import { montarRequisicaoResumo } from './acoes/resumir';
-import { prepararMinuta, prepararRefinamento } from './acoes/minutar';
-import { gerarStream } from './llm-cliente';
-import { coletarProcesso } from './pje/contexto';
+import { enviar, type MensagemPjeEntrada, type MensagemPjeSaida, type RespostaConfig, type StatusAba } from '@shared/mensagens';
+import { coletarProcesso, idProcessoDaTela } from './pje/contexto';
 import { instalarRelayAuth } from './ponte-main';
 import { hostBloqueado, pareceSerPje } from './sonda-pje';
-import { copiarParaAreaDeTransferencia, criarRaizNexia, mostrarToast } from './ui';
-import { criarFab, SidebarNexia } from './ui/sidebar';
+import { criarRaizNexia } from './ui/raiz-shadow';
 
-interface Estado {
-  dossie: DossieProcesso | null;
-  mapaReverso: Map<string, string>;
-  historicoChat: MensagemLLM[];
-  ocupado: boolean;
-  ultimaMinuta: string;
-  ultimoPromptMinuta: string;
-  ultimoResumo: string;
+const LOGO_FAB = `<svg viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="#fff"/><path d="M42 90 V40 L82 88 V60" stroke="#0a0a0a" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="#0a0a0a"/></svg>`;
+
+let raiz: ShadowRoot | null = null;
+let fab: HTMLButtonElement | null = null;
+let coletando = false;
+
+function toast(mensagem: string): void {
+  if (!raiz) return;
+  raiz.querySelector('.nx-toast')?.remove();
+  const t = document.createElement('div');
+  t.className = 'nx-toast';
+  t.setAttribute('role', 'status');
+  t.textContent = mensagem;
+  raiz.append(t);
+  setTimeout(() => t.remove(), 6000);
 }
 
-const estado: Estado = {
-  dossie: null,
-  mapaReverso: new Map(),
-  historicoChat: [],
-  ocupado: false,
-  ultimaMinuta: '',
-  ultimoPromptMinuta: '',
-  ultimoResumo: ''
-};
-
-let ui: SidebarNexia;
-let raiz: ShadowRoot;
-
-function exibir(texto: string): string {
-  return estado.mapaReverso.size > 0 ? desanonimizar(texto, estado.mapaReverso) : texto;
-}
-
-async function garantirDossie(): Promise<DossieProcesso> {
-  if (estado.dossie) return estado.dossie;
-  ui.definirStatus('Coletando o processo…');
-  const dossie = await coletarProcesso((progresso) => {
-    const contagem =
-      progresso.total !== undefined ? ` ${progresso.feitos ?? 0}/${progresso.total} documentos` : '';
-    ui.definirStatus(`${progresso.etapa}${contagem}`);
+function montarFab(): void {
+  if (fab) return;
+  raiz = criarRaizNexia();
+  fab = document.createElement('button');
+  fab.className = 'nx-fab';
+  fab.type = 'button';
+  fab.title = 'Abrir este processo no painel do NexIA';
+  fab.innerHTML = `${LOGO_FAB}<span>NexIA</span>`;
+  fab.addEventListener('click', () => {
+    enviar('PAINEL_ABRIR')
+      .then(() => toast('No painel, use "Fontes → Processo do PJe" para importar este processo.'))
+      .catch(() => toast('Clique no ícone do NexIA na barra do navegador para abrir o painel e importe o processo em "Fontes".'));
   });
-  estado.dossie = dossie;
-  const extraidos = dossie.documentos.filter((d) => d.texto || d.paginasImagem?.length).length;
-  ui.definirStatus(
-    `Processo carregado: ${dossie.partes.length} parte(s), ${dossie.movimentacoes.length} movimentação(ões), ${extraidos}/${dossie.documentos.length} documento(s) extraído(s).`
-  );
-  return dossie;
+  raiz.append(fab);
 }
 
-function executarStream(
-  requisicao: RequisicaoLLM,
-  aoAtualizar: (texto: string, gerando: boolean) => void,
-  aoConcluir: (texto: string) => void
-): void {
-  estado.ocupado = true;
-  ui.definirOcupado(true);
-  let acumulado = '';
-  gerarStream(requisicao, {
-    aoTrecho: (trecho) => {
-      acumulado += trecho;
-      aoAtualizar(exibir(acumulado), true);
-    },
-    aoFim: (completo) => {
-      estado.ocupado = false;
-      ui.definirOcupado(false);
-      aoAtualizar(exibir(completo), false);
-      aoConcluir(completo);
-    },
-    aoErro: (mensagem) => {
-      estado.ocupado = false;
-      ui.definirOcupado(false);
-      aoAtualizar(exibir(acumulado), false);
-      ui.definirStatus(mensagem, true);
-      mostrarToast(raiz, mensagem, 'erro');
+function desmontarFab(): void {
+  if (coletando) return;
+  (raiz?.host as Element | undefined)?.remove();
+  raiz = null;
+  fab = null;
+}
+
+function sincronizarPresenca(): void {
+  const temProcesso = idProcessoDaTela() !== null;
+  if (temProcesso) montarFab();
+  else desmontarFab();
+}
+
+/** Coleta solicitada pelo painel: autos + extração de texto + OCR local dos digitalizados. */
+function atenderColeta(porta: chrome.runtime.Port): void {
+  const enviarPorta = (m: MensagemPjeSaida) => {
+    try {
+      porta.postMessage(m);
+    } catch {
+      /* painel fechado */
     }
+  };
+  porta.onMessage.addListener((m: MensagemPjeEntrada) => {
+    if (m.tipo !== 'coletar' || coletando) return;
+    coletando = true;
+    void (async () => {
+      try {
+        const { config } = await enviar<RespostaConfig>('CONFIG_OBTER');
+        const dossie = await coletarProcesso(
+          { automatico: config.ocrAutomatico, maxPaginasPorDoc: config.ocrMaxPaginasPorDoc, maxPaginasTotal: config.ocrMaxPaginasTotal },
+          (p) => enviarPorta({ tipo: 'progresso', texto: `${p.etapa}${p.total !== undefined ? ` ${p.feitos ?? 0}/${p.total}` : ''}` })
+        );
+        // Páginas-imagem não cruzam a mensagem (tamanho): só o texto vai ao painel.
+        for (const d of dossie.documentos) d.paginasImagem = undefined;
+        enviarPorta({ tipo: 'dossie', dossie });
+      } catch (erro) {
+        enviarPorta({ tipo: 'erro', mensagem: erro instanceof Error ? erro.message : String(erro) });
+      } finally {
+        coletando = false;
+      }
+    })();
   });
 }
-
-// ---------------------------------------------------------------------------
-// Ações da UI
-
-async function aoEnviarChat(texto: string): Promise<void> {
-  if (estado.ocupado) return;
-  try {
-    const dossie = await garantirDossie();
-    ui.adicionarMensagemChat('usuario', texto);
-    estado.historicoChat.push({ papel: 'user', conteudo: texto });
-
-    const requisicao: RequisicaoLLM = {
-      system: SYSTEM_PROMPT,
-      mensagens: [
-        montarMensagemContexto(dossie),
-        { papel: 'assistant', conteudo: RESPOSTA_CONTEXTO_ACK },
-        ...estado.historicoChat
-      ]
-    };
-    const bolha = ui.adicionarMensagemChat('assistente', '');
-    bolha.classList.add('gerando');
-    executarStream(
-      requisicao,
-      (parcial, gerando) => ui.atualizarMensagemChat(bolha, parcial, gerando),
-      (completo) => estado.historicoChat.push({ papel: 'assistant', conteudo: completo })
-    );
-  } catch (erro) {
-    const mensagem = erro instanceof Error ? erro.message : String(erro);
-    ui.definirStatus(mensagem, true);
-    mostrarToast(raiz, mensagem, 'erro');
-  }
-}
-
-async function aoAnonimizar(): Promise<void> {
-  if (estado.ocupado) return;
-  try {
-    const dossie = await garantirDossie();
-    if (dossie.anonimizado) {
-      ui.ativarAba('anonimizar');
-      return;
-    }
-    estado.ocupado = true;
-    ui.definirOcupado(true);
-    ui.ativarAba('anonimizar');
-    const resultado = await anonimizarProcesso(dossie, {
-      comOcr: true,
-      aoProgresso: (texto) => ui.definirProgressoAnonimizacao(texto)
-    });
-    estado.mapaReverso = resultado.mapaReverso;
-    ui.definirAnonimizado();
-    ui.definirRelatorio(resultado.relatorio);
-    ui.definirProgressoAnonimizacao('Anonimização concluída. Baixe o TXT ou continue no chat/resumo/minuta.');
-    ui.definirStatus('Processo anonimizado localmente. Nenhum dado pessoal será enviado à IA.');
-    mostrarToast(raiz, `Anonimização concluída: ${resultado.relatorio.nomesMascarados} nome(s) e ${resultado.relatorio.totalPii} dado(s) pessoal(is) mascarados localmente.`);
-  } catch (erro) {
-    const mensagem = erro instanceof Error ? erro.message : String(erro);
-    ui.definirProgressoAnonimizacao(mensagem);
-    ui.definirStatus(mensagem, true);
-    mostrarToast(raiz, mensagem, 'erro');
-  } finally {
-    estado.ocupado = false;
-    ui.definirOcupado(false);
-  }
-}
-
-async function aoBaixarTxt(): Promise<void> {
-  try {
-    baixarTxtProcesso(await garantirDossie());
-  } catch (erro) {
-    ui.definirStatus(erro instanceof Error ? erro.message : String(erro), true);
-  }
-}
-
-async function aoRecarregarAutos(): Promise<void> {
-  if (estado.ocupado) return;
-  estado.dossie = null;
-  estado.mapaReverso = new Map();
-  estado.historicoChat = [];
-  try {
-    await garantirDossie();
-  } catch (erro) {
-    ui.definirStatus(erro instanceof Error ? erro.message : String(erro), true);
-  }
-}
-
-async function aoGerarResumo(): Promise<void> {
-  if (estado.ocupado) return;
-  try {
-    const dossie = await garantirDossie();
-    executarStream(
-      montarRequisicaoResumo(dossie),
-      (parcial, gerando) => ui.atualizarSaidaResumo(parcial, gerando),
-      (completo) => {
-        estado.ultimoResumo = completo;
-      }
-    );
-  } catch (erro) {
-    ui.definirStatus(erro instanceof Error ? erro.message : String(erro), true);
-  }
-}
-
-async function aoGerarMinuta(natureza: NaturezaMinuta, instrucoes: string): Promise<void> {
-  if (estado.ocupado) return;
-  try {
-    const dossie = await garantirDossie();
-    ui.definirStatus('Buscando modelo local pertinente…');
-    const preparacao = await prepararMinuta(dossie, natureza, instrucoes);
-    ui.definirModeloUsado(preparacao.modeloUsado);
-    estado.ultimoPromptMinuta = preparacao.promptMinuta;
-    executarStream(
-      preparacao.requisicao,
-      (parcial, gerando) => ui.atualizarSaidaMinuta(parcial, gerando),
-      (completo) => {
-        estado.ultimaMinuta = completo;
-        ui.definirStatus('Minuta gerada. Revise antes de utilizar.');
-      }
-    );
-  } catch (erro) {
-    ui.definirStatus(erro instanceof Error ? erro.message : String(erro), true);
-  }
-}
-
-async function aoRefinarMinuta(instrucoes: string): Promise<void> {
-  if (estado.ocupado || !estado.ultimaMinuta) {
-    if (!estado.ultimaMinuta) mostrarToast(raiz, 'Gere uma minuta antes de refinar.', 'erro');
-    return;
-  }
-  try {
-    const dossie = await garantirDossie();
-    const requisicao = prepararRefinamento(dossie, estado.ultimoPromptMinuta, estado.ultimaMinuta, instrucoes);
-    executarStream(
-      requisicao,
-      (parcial, gerando) => ui.atualizarSaidaMinuta(parcial, gerando),
-      (completo) => {
-        estado.ultimaMinuta = completo;
-      }
-    );
-  } catch (erro) {
-    ui.definirStatus(erro instanceof Error ? erro.message : String(erro), true);
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Bootstrap
 
 async function principal(): Promise<void> {
   if (!pareceSerPje()) return;
   instalarRelayAuth();
   if (window !== window.top) return;
+
+  chrome.runtime.onMessage.addListener((mensagem: { canal?: string }, _remetente, responder) => {
+    if (mensagem?.canal === 'STATUS_ABA') {
+      responder({ pje: true, processo: idProcessoDaTela() !== null, host: location.host } satisfies StatusAba);
+      return true;
+    }
+    return false;
+  });
+  chrome.runtime.onConnect.addListener((porta) => {
+    if (porta.name === PORTA_PJE) atenderColeta(porta);
+  });
 
   try {
     const { config } = await enviar<RespostaConfig>('CONFIG_OBTER');
@@ -248,21 +113,11 @@ async function principal(): Promise<void> {
     log.aviso('Config indisponível, prosseguindo com padrão', String(erro));
   }
 
-  raiz = criarRaizNexia();
-  ui = new SidebarNexia({
-    aoEnviarChat: (texto) => void aoEnviarChat(texto),
-    aoAnonimizar: () => void aoAnonimizar(),
-    aoBaixarTxt: () => void aoBaixarTxt(),
-    aoRecarregarAutos: () => void aoRecarregarAutos(),
-    aoGerarResumo: () => void aoGerarResumo(),
-    aoCopiarResumo: () => void copiarParaAreaDeTransferencia(raiz, exibir(estado.ultimoResumo)),
-    aoGerarMinuta: (natureza, instrucoes) => void aoGerarMinuta(natureza, instrucoes),
-    aoRefinarMinuta: (instrucoes) => void aoRefinarMinuta(instrucoes),
-    aoCopiarMinuta: () => void copiarParaAreaDeTransferencia(raiz, exibir(estado.ultimaMinuta))
-  });
-  raiz.append(ui.elemento);
-  raiz.append(criarFab(() => ui.alternar()));
-  log.info('NexIA ativo neste frame');
+  sincronizarPresenca();
+  // O PJe navega dentro da mesma aba sem recarregar; re-checa periodicamente.
+  window.addEventListener('popstate', sincronizarPresenca);
+  window.addEventListener('hashchange', sincronizarPresenca);
+  setInterval(sincronizarPresenca, 3000);
 }
 
 void principal();

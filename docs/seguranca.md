@@ -1,36 +1,40 @@
-# Segurança e proteção de dados (LGPD / CNJ)
+# Segurança e proteção de dados (LGPD)
 
-## Anonimização 100% local — sem envio de dados pessoais à IA
+## Princípios
 
-Requisito das normas do CNJ sobre uso de IA no Judiciário: **dados pessoais não podem ser enviados ao modelo**. O NexIA garante isso sem depender do modelo para identificar nada.
+1. **Nada passa por servidor do NexIA.** Não existe backend: documentos, conversas, mapa de pseudônimos e chaves ficam no navegador do usuário.
+2. **Pseudonimização local e determinística, sem IA.** Nenhum trecho é enviado a modelo para "descobrir" dados pessoais (requisito das normas do CNJ sobre IA no Judiciário e boa prática LGPD em qualquer área).
+3. **Defesa em profundidade.** Proteção na UI + guarda de saída no service worker + transparência em cada consulta externa.
+4. **O usuário vê e decide.** Revisão entidade a entidade, prévia "como a IA vai ler", "ver como a IA viu" em cada resposta.
 
-O pipeline (`src/content/anonimizador/`) é inteiramente local e determinístico:
+## Pipeline de proteção (`src/shared/anonimizador/`)
 
-1. **Documentos digitalizados → OCR local** (`../pje/ocr-local.ts`, Tesseract/WASM). O reconhecimento de texto roda na própria máquina; a imagem nunca sai. O texto reconhecido segue para os passos de anonimização abaixo. Se o idioma do OCR não estiver instalado, o documento digitalizado é excluído do conteúdo (o restante continua funcionando).
+- **Detectores** (`detectores.ts`): CPF, CNPJ (numérico e alfanumérico), RG, CNH, PIS/PASEP/NIT, CNS, título de eleitor, passaporte, CEP, endereço, telefone, e-mail, OAB, registros profissionais (CRM, CRO, CRP, COREN, CREA, CAU, CRC, RQE, ART/RRT…), número de processo CNJ, chave de NF-e, placa, RENAVAM, cartão, dados bancários, PIX, data de nascimento, prontuário, IP e termos personalizados. Números "soltos" só contam se o dígito verificador fechar (`validadores.ts`); formatos pontuados e âncoras textuais ("RG nº") são sinais fortes.
+- **Nomes** sem IA: dicionário local de prenomes + sobrenomes capitalizados, nomes após âncoras ("Sr.", "Dra.", "paciente", "filho de", "Nome:"), barreiras contra falsos positivos (instituições, logradouros, leis), e **pessoas conhecidas** fornecidas pelo sistema de origem (partes qualificadas do PJe → `[PARTE AUTORA]`, `[ADVOGADO DO POLO ATIVO]`…; pessoas jurídicas e entes públicos preservados).
+- **Motor** (`motor.ts`): resolve sobreposições por prioridade, gera pseudônimos estáveis por sessão (`[CPF_1]` é sempre o mesmo CPF) e mantém o mapa reverso **apenas em memória**.
+- **Guarda de saída** (`guarda.ts`, aplicada em `background/index.ts`): varre todo o texto de cada requisição; CPF/CNS/cartão válidos (e e-mail, se ativado) → bloqueia ou pede confirmação explícita.
 
-2. **Nomes de pessoas → papel processual** (`partes-local.ts`). Usa os **dados estruturados de partes com qualificação que o próprio PJe fornece** (polos ativo/passivo/outros, com nome e papel). Cada nome de pessoa física é substituído por `[PARTE AUTORA]`, `[PARTE RÉ]`, `[ADVOGADO DO POLO ATIVO]`, `[PERITO]` etc. O casamento é acento- e caixa-insensível (`regexDeNome`). Pessoas jurídicas e entes públicos (INSS, União, municípios, empresas) são preservados por não constituírem dado pessoal.
+## Consultas externas
 
-3. **Dados sensíveis por regex** (`regex-local.ts`): CPF, CNPJ, RG, CEP, telefone, e-mail, OAB, dados bancários e número de processo → marcadores `[... OMITIDO]`. O RG não colide com referências de leis (`8.213/91`) nem números de processo.
-
-Depois disso, **apenas o texto anônimo** permanece em memória. Um **mapa reverso** (substituto → nome original) fica só na memória da aba e serve para reexibir os nomes reais nas respostas — os nomes reais nunca saem da máquina.
-
-**Função independente e auditável** (`fluxo.ts`, aba "Anonimizar"): o usuário extrai o processo (com OCR nos digitalizados), anonimiza e baixa um **TXT único** contendo apenas o texto anonimizado. A interface exibe um **relatório de auditoria** (quantos nomes e dados pessoais foram mascarados, por tipo e por documento) — o relatório fica na tela, não no arquivo.
-
-Nenhuma chamada de rede ocorre durante a anonimização — inclusive o OCR é 100% local.
+- Executadas no service worker, apenas para os hosts listados em `host_permissions`.
+- Cada definição declara **o que sai** do navegador (`envia`), exibido ao usuário antes e durante a consulta.
+- Com a proteção ligada, o modelo só conhece marcadores; o painel resolve o marcador localmente para a consulta e pseudonimiza o retorno (ex.: nomes do quadro societário) antes de entregá-lo ao modelo.
+- Nenhuma ferramenta recebe CPF ou dados de saúde de pessoas.
 
 ## Chaves de API
 
-- Fornecidas pelo usuário; guardadas em `chrome.storage.local` com ofuscação AES-GCM (chave derivada por PBKDF2 de um segredo do build) — `src/background/cofre-chaves.ts`.
-- **Isto não é criptografia forte**: o segredo está no pacote da extensão. Serve apenas para evitar leitura casual de dumps de storage.
-- As chaves só são lidas no service worker e nunca trafegam para o content script.
+- Do usuário; em `chrome.storage.local` com ofuscação AES-GCM (`background/cofre-chaves.ts`). **Não é criptografia forte** (o segredo está no pacote): evita leitura casual de dumps.
+- Lidas só no service worker; nunca vão ao painel nem ao content script.
 
-## Dados de processo
+## Dados em repouso
 
-- Conteúdo de autos e histórico de chat vivem **apenas em memória** — nunca em `chrome.storage.local` nem em disco.
-- Logs passam por redação automática de PII (`src/shared/log.ts`); nenhum outro módulo deve chamar `console.*` diretamente.
-- Snapshots de auth ficam em `chrome.storage.session` (limpos ao fechar o navegador).
+- Fontes, textos, conversas e mapa de pseudônimos: **somente memória** do painel; fechar o painel apaga.
+- Conteúdo levado pelo menu de contexto passa brevemente por `chrome.storage.session` (memória, limpo ao fechar o navegador) e é removido ao ser importado.
+- Configurações, receitas próprias e termos "sempre/nunca mascarar": `chrome.storage.local`. Biblioteca de modelos: IndexedDB local.
+- Logs passam por redação automática (`shared/log.ts`); nenhum conteúdo de documento é logado.
 
-## Rede
+## Permissões
 
-- `host_permissions` restritos a `*.jus.br` e aos três provedores de IA.
-- Chamadas de IA saem apenas do service worker; chamadas ao PJe apenas do content (same-origin).
+- `host_permissions`: `*.jus.br` (conector PJe), provedores de IA e as APIs públicas curadas.
+- `optional_host_permissions` (`https://*/*`): pedida **site a site**, só quando o usuário clica em "Página atual".
+- `activeTab` + `scripting`: leitura da seleção/página via menu de contexto, por gesto do usuário.

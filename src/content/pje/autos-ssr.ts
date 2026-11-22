@@ -21,10 +21,122 @@ const REGEX_NUMERO_CNJ = /\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/;
 const REGEX_DATA = /\b(\d{2}\/\d{2}\/\d{4})(?:\s+(\d{2}:\d{2}))?\b/;
 
 export async function coletarAutos(origem: string, idProcesso: string, ca: string | null): Promise<ResultadoAutos> {
-  const resposta = await fetch(urlAutosDigitais(origem, idProcesso, ca), { credentials: 'include' });
+  const url = urlAutosDigitais(origem, idProcesso, ca);
+  const resposta = await fetch(url, { credentials: 'include' });
   if (!resposta.ok) throw new Error(`Página de autos indisponível (HTTP ${resposta.status})`);
   const html = await resposta.text();
-  return extrairDeHtml(html);
+  const resultado = extrairDeHtml(html);
+  // A timeline do PJe legacy carrega só a primeira "página" de documentos;
+  // as demais vêm por AJAX (RichFaces autoScroll). Busca todas.
+  await paginarTimeline(url, html, resultado);
+  return resultado;
+}
+
+// ---------------------------------------------------------------------------
+// Paginação AJAX (RichFaces autoScroll) — carrega o restante da timeline
+
+const MAX_PAGINAS = 40;
+
+async function paginarTimeline(url: string, htmlInicial: string, acumulado: ResultadoAutos): Promise<void> {
+  try {
+    let viewState = extrairViewState(htmlInicial);
+    const total = extrairInputNumerico(htmlInicial, 'totalPaginas');
+    let atual = extrairInputNumerico(htmlInicial, 'paginaAtual');
+    const trigger = extrairTriggerAutoScroll(htmlInicial);
+    if (!viewState || !trigger || total === null || atual === null || total <= atual) return;
+
+    const docs = new Map(acumulado.documentos.map((d) => [d.id, d]));
+    const chavesMov = new Set(acumulado.movimentacoes.map(chaveMov));
+
+    for (let i = 0; i < MAX_PAGINAS && atual < total; i++) {
+      const resposta = await fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body: montarCorpoAutoScroll(viewState, trigger)
+      });
+      if (!resposta.ok) break;
+      const htmlPagina = await resposta.text();
+      const parcial = extrairDeHtml(htmlPagina);
+
+      let novos = 0;
+      for (const d of parcial.documentos) {
+        if (!docs.has(d.id)) {
+          docs.set(d.id, d);
+          novos++;
+        }
+      }
+      for (const m of parcial.movimentacoes) {
+        const k = chaveMov(m);
+        if (!chavesMov.has(k)) {
+          chavesMov.add(k);
+          acumulado.movimentacoes.push(m);
+        }
+      }
+
+      const novaAtual = extrairInputNumerico(htmlPagina, 'paginaAtual');
+      atual = novaAtual !== null && novaAtual > atual ? novaAtual : atual + 1;
+      const novoViewState = extrairViewState(htmlPagina);
+      if (novoViewState) viewState = novoViewState;
+      if (novos === 0) break; // nada novo: evita laços improdutivos
+    }
+
+    acumulado.documentos = [...docs.values()];
+  } catch {
+    acumulado.avisos.push('paginação da timeline incompleta');
+  }
+}
+
+function chaveMov(m: MovimentacaoProcesso): string {
+  return `${m.data}|${m.descricao.slice(0, 80)}`;
+}
+
+function decodificarEntidades(texto: string): string {
+  return texto
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
+function extrairInputNumerico(html: string, id: string): number | null {
+  const m =
+    html.match(new RegExp(`id="${id}"[^>]*value="(\\d+)"`)) ??
+    html.match(new RegExp(`value="(\\d+)"[^>]*id="${id}"`));
+  return m && m[1] ? Number(m[1]) : null;
+}
+
+function extrairViewState(html: string): string | null {
+  const m =
+    html.match(/name="javax\.faces\.ViewState"[^>]*value="([^"]*)"/) ??
+    html.match(/id="javax\.faces\.ViewState"[^>]*value="([^"]*)"/) ??
+    html.match(/value="([^"]*)"[^>]*name="javax\.faces\.ViewState"/);
+  return m && m[1] ? decodificarEntidades(m[1]) : null;
+}
+
+function extrairTriggerAutoScroll(html: string): string | null {
+  const m = html.match(/similarityGroupingId'?\s*:\s*'([^']+)'/);
+  if (m && m[1]) return m[1];
+  const m2 =
+    html.match(/(divTimeLine:j_id\d+)[\s\S]{0,200}autoScroll/) ??
+    html.match(/autoScroll[\s\S]{0,200}(divTimeLine:j_id\d+)/);
+  return m2 && m2[1] ? m2[1] : null;
+}
+
+function montarCorpoAutoScroll(viewState: string, trigger: string): string {
+  const p = new URLSearchParams();
+  p.set('AJAXREQUEST', '_viewRoot');
+  p.set('divTimeLine:chkExibirDocumentos', 'on');
+  p.set('divTimeLine:chkExibirMovimentos', 'on');
+  p.set('divTimeLine:chkExibirAudioVideo', 'on');
+  p.set('divTimeLine', 'divTimeLine');
+  p.set('autoScroll', '');
+  p.set('javax.faces.ViewState', viewState);
+  p.set(trigger, trigger);
+  p.set('ajaxSingle', trigger);
+  p.set('AJAX:EVENTS_COUNT', '1');
+  return p.toString();
 }
 
 export function extrairDeHtml(html: string): ResultadoAutos {

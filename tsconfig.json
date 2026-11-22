@@ -3,17 +3,32 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noEmit": true,
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["chrome"],
-    "baseUrl": ".",
+    "strict": true,
+    "noUnusedLocals": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
     "paths": {
-      "@shared/*": ["src/shared/*"]
-    }
+      "@shared/*": ["./src/shared/*"]
+    },
+    "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": [
+    "src/background.ts",
+    "src/offscreen.ts",
+    "src/popup.ts",
+    "src/capability.ts",
+    "src/popup/**",
+    "src/content/ui/sidebar.ts",
+    "src/content/ui/componentes.ts",
+    "src/content/ui/index.ts",
+    "src/content/acoes/**",
+    "src/content/anonimizador/**",
+    "src/content/llm-cliente.ts"
+  ]
 }

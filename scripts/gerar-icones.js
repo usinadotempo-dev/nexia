@@ -5,31 +5,27 @@
  *
  * Uso: node scripts/gerar-icones.js
  */
-'use strict';
-const fs = require('node:fs');
-const path = require('node:path');
-const zlib = require('node:zlib');
+import fs from 'node:fs';
+import path from 'node:path';
+import zlib from 'node:zlib';
+import { fileURLToPath } from 'node:url';
 
-// Paleta NexIA
-const INDIGO = [0x4f, 0x46, 0xe5];
-const VIOLETA = [0x7c, 0x3a, 0xed];
-const CIANO = [0x22, 0xd3, 0xee];
-const CLARO = [0xe7, 0xe9, 0xf0];
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Geometria em coordenadas 0..128 (compatível com o SVG fonte)
-const RAIO_CANTO = 28;
+// Identidade P&B: ladrilho preto, traço branco.
+const PRETO = [0x0a, 0x0a, 0x0a];
+const BRANCO = [0xff, 0xff, 0xff];
+
+// Geometria em coordenadas 0..128 (compatível com assets/icone-fonte.svg)
+const RAIO_CANTO = 26;
 const MARGEM = 4;
-const NOS = [
-  { x: 40, y: 40, r: 11, cor: CIANO },
-  { x: 88, y: 92, r: 11, cor: CIANO },
-  { x: 88, y: 36, r: 11, cor: CLARO }
-];
+const NOS = [{ x: 82, y: 38, r: 8, cor: BRANCO }]; // pingo do "i"
 const SEGMENTOS = [
-  { x1: 40, y1: 92, x2: 40, y2: 40 },
-  { x1: 40, y1: 40, x2: 88, y2: 92 },
-  { x1: 88, y1: 92, x2: 88, y2: 36 }
+  { x1: 42, y1: 90, x2: 42, y2: 40 },
+  { x1: 42, y1: 40, x2: 82, y2: 88 },
+  { x1: 82, y1: 88, x2: 82, y2: 60 }
 ];
-const ESPESSURA = 9;
+const ESPESSURA = 13;
 
 function distanciaSegmento(px, py, s) {
   const dx = s.x2 - s.x1;
@@ -61,16 +57,9 @@ function corNoPonto(x, y) {
     if (Math.hypot(x - no.x, y - no.y) <= no.r) return [...no.cor, 255];
   }
   for (const s of SEGMENTOS) {
-    if (distanciaSegmento(x, y, s) <= ESPESSURA / 2) return [...CIANO, 255];
+    if (distanciaSegmento(x, y, s) <= ESPESSURA / 2) return [...BRANCO, 255];
   }
-  // gradiente diagonal índigo→violeta
-  const t = Math.max(0, Math.min(1, (x + y) / 256));
-  return [
-    Math.round(INDIGO[0] + (VIOLETA[0] - INDIGO[0]) * t),
-    Math.round(INDIGO[1] + (VIOLETA[1] - INDIGO[1]) * t),
-    Math.round(INDIGO[2] + (VIOLETA[2] - INDIGO[2]) * t),
-    255
-  ];
+  return [...PRETO, 255];
 }
 
 function rasterizar(tamanho) {

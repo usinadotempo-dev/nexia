@@ -1,3 +1,7 @@
+import type { TipoEntidade } from './anonimizador/detectores';
+import type { TipoGuarda } from './anonimizador/guarda';
+import type { AreaId, ReceitaPersonalizada } from './areas/tipos';
+
 export type ProvedorId = 'anthropic' | 'openai' | 'gemini';
 
 /** Snapshot dos cabeçalhos de autenticação capturados no page world do PJe. */
@@ -12,19 +16,46 @@ export interface SnapshotAuth {
   capturadoEm: number;
 }
 
+export type ModoGuarda = 'bloquear' | 'confirmar' | 'desligada';
+
 export interface ConfigNexia {
   provedorAtivo: ProvedorId;
   modelos: Record<ProvedorId, string>;
   temperatura: number;
   maxTokens: number;
+  /** Conector PJe: hosts em que a extensão fica desligada. */
   hostsBloqueados: string[];
+  ocrAutomatico: boolean;
+  ocrMaxPaginasPorDoc: number;
+  ocrMaxPaginasTotal: number;
+
+  /** Área profissional ativa (persona, receitas, detectores, ferramentas). */
+  areaAtiva: AreaId;
+  onboardingConcluido: boolean;
+  /** Novas sessões começam com a proteção de dados ligada. */
+  anonimizarPorPadrao: boolean;
+  /** Detecção de nomes de pessoas por dicionário local. */
+  detectarNomes: boolean;
+  /** Detectores escolhidos pelo usuário por área (sobrepõe o padrão da área). */
+  detectoresPorArea: Partial<Record<AreaId, TipoEntidade[]>>;
+  sempreMascarar: string[];
+  nuncaMascarar: string[];
+  /** Guarda de saída: varredura de dados pessoais antes de qualquer envio à IA. */
+  guardaSaida: ModoGuarda;
+  guardaTipos: TipoGuarda[];
+  /** A IA pode chamar ferramentas (APIs públicas e cálculos) durante a conversa. */
+  ferramentasAutomaticas: boolean;
+  /** Ferramentas desligadas pelo usuário. */
+  ferramentasDesligadas: string[];
+  datajudChave: string;
+  transparenciaChave: string;
+  receitasPersonalizadas: ReceitaPersonalizada[];
 }
 
 export type PoloParte = 'ativo' | 'passivo' | 'outros';
 
 export interface ParteProcesso {
   nome: string;
-  /** Papel como informado pelo PJe (AUTOR, REU, ADVOGADO, PERITO...). */
   papel: string;
   polo: PoloParte;
   documento?: string;
@@ -35,15 +66,18 @@ export interface MovimentacaoProcesso {
   descricao: string;
 }
 
+export type StatusExtracao = 'texto-nativo' | 'ocr' | 'pendente' | 'erro' | 'ia-multimodal';
+
 export interface DocumentoProcesso {
   id: string;
   nome: string;
   tipo: string;
   data?: string;
   texto?: string;
-  /** Páginas renderizadas como data URLs (documentos digitalizados). */
   paginasImagem?: string[];
-  /** true quando o texto veio de OCR local de um documento digitalizado. */
+  statusExtracao?: StatusExtracao;
+  motivoPendencia?: string;
+  completadoPorIa?: boolean;
   transcritoPorOcr?: boolean;
   erro?: string;
 }
@@ -60,9 +94,22 @@ export interface DossieProcesso {
   anonimizado: boolean;
 }
 
+// ---------------------------------------------------------------------------
+// LLM — representação neutra (convertida por provedor no service worker)
+
 export interface ParteTexto { tipo: 'texto'; texto: string }
 export interface ParteImagem { tipo: 'imagem'; mediaType: string; dadosBase64: string }
-export type ConteudoMensagem = string | Array<ParteTexto | ParteImagem>;
+export interface ParteChamada {
+  tipo: 'chamada';
+  id: string;
+  nome: string;
+  args: Record<string, unknown>;
+  /** Parte original do provedor (ex.: Gemini com thoughtSignature), reenviada como veio. */
+  bruto?: unknown;
+}
+export interface ParteResultado { tipo: 'resultado'; id: string; nome: string; conteudo: string; erro?: boolean }
+export type ParteConteudo = ParteTexto | ParteImagem | ParteChamada | ParteResultado;
+export type ConteudoMensagem = string | ParteConteudo[];
 
 export interface MensagemLLM {
   papel: 'user' | 'assistant';
@@ -74,13 +121,17 @@ export interface RequisicaoLLM {
   mensagens: MensagemLLM[];
   temperatura?: number;
   maxTokens?: number;
+  /** Nomes das ferramentas que o modelo pode chamar nesta requisição. */
+  ferramentas?: string[];
+  /** O usuário confirmou o envio apesar de achados da guarda de saída. */
+  guardaConfirmada?: boolean;
 }
 
-/** Modelo de minuta indexado localmente. */
+/** Modelo da biblioteca local (pasta do usuário), indexado por BM25. */
 export interface ModeloMinuta {
   id: string;
   nome: string;
-  natureza: NaturezaMinuta | 'outro';
+  natureza: string;
   texto: string;
 }
 

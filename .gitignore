@@ -1,6 +1,10 @@
 node_modules/
 dist/
+release/
 *.zip
+# Amostras de teste podem conter dados reais (LGPD) — nunca versionar
+samples/*
+!samples/COLOQUE-IMAGENS-AQUI.md
 .env
 # Modelo de idioma do Tesseract (grande, baixado uma vez — ver README)
 assets/tesseract/lang/*.traineddata
