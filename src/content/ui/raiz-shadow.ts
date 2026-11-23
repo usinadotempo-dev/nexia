@@ -1,9 +1,9 @@
-/** Cria o host da UI do NexIA isolado do CSS do PJe via Shadow DOM. */
+/** Cria o host da UI do Nexpra isolado do CSS do PJe via Shadow DOM. */
 // ?inline: o Vite entrega o CSS processado como string (default export) sem injetá-lo
 // no <head> — é o que precisamos para colar no <style> dentro do Shadow DOM.
 import tokensCss from './tokens.css?inline';
 
-export function criarRaizNexia(): ShadowRoot {
+export function criarRaizNexpra(): ShadowRoot {
   const host = document.createElement('div');
   host.id = 'nexia-raiz';
   host.style.all = 'initial';

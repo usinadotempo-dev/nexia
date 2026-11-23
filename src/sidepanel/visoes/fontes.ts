@@ -5,7 +5,7 @@ import type { DossieProcesso } from '@shared/tipos';
 import type { Contexto, Visao } from '../contexto';
 import { botao, botaoIcone, dialogo, el, estimarTokens, icone, toast } from '../dom';
 import { espaco, type Fonte, type OrigemFonte } from '../estado';
-import { extrairArquivo, lerAbaAtiva, TIPOS_ACEITOS } from '../extracao';
+import { abaAtiva, extrairArquivo, lerAbaAtiva, pedirPermissaoLeitura, TIPOS_ACEITOS } from '../extracao';
 import { plural } from './comum';
 
 const ICONE_ORIGEM: Record<OrigemFonte, string> = {
@@ -85,6 +85,32 @@ export function criarVisaoFontes(ctx: Contexto): Visao {
 
   async function lerPagina(): Promise<void> {
     try {
+      const aba = await abaAtiva();
+      if (!aba.podeLer) {
+        // Sem acesso ao site o Chrome nem revela o endereço da aba: explicar e oferecer caminhos.
+        const escolha = await dialogo({
+          titulo: 'Ler a página atual',
+          corpo: el(
+            'div',
+            { style: 'display:flex;flex-direction:column;gap:8px' },
+            el('p', {}, 'Para ler a página aberta, o Chrome precisa que você autorize o Nexpra a ler páginas. Ele pede isso uma única vez; depois o botão funciona em qualquer site. Você pode revogar quando quiser em chrome://extensions.'),
+            el('p', { class: 'ajuda' }, 'Sem autorizar nada: clique com o botão direito na página e escolha "Nexpra: levar esta página para o painel" (ou selecione um trecho e use "levar seleção"). O conteúdo só é lido quando você pede, e passa pela proteção de dados antes de ir à IA.')
+          ),
+          botoes: [
+            { id: 'menu', rotulo: 'Usar o botão direito' },
+            { id: 'permitir', rotulo: 'Permitir leitura de páginas', primario: true }
+          ]
+        });
+        if (escolha === 'menu') {
+          toast('Na página: botão direito → "Nexpra: levar esta página para o painel".');
+          return;
+        }
+        if (escolha !== 'permitir') return;
+        if (!(await pedirPermissaoLeitura())) {
+          ctx.status('Permissão não concedida. Use o botão direito na página → "Nexpra: levar esta página para o painel".', { erro: true });
+          return;
+        }
+      }
       ctx.status('Lendo a página atual…', { carregando: true });
       const p = await lerAbaAtiva();
       espaco.adicionarFonte({
@@ -104,7 +130,7 @@ export function criarVisaoFontes(ctx: Contexto): Visao {
   }
 
   async function importarPje(): Promise<void> {
-    const [aba] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    const [aba] = await chrome.tabs.query({ active: true, currentWindow: true });
     let st: StatusAba | null = null;
     if (aba?.id) {
       try {
@@ -120,7 +146,7 @@ export function criarVisaoFontes(ctx: Contexto): Visao {
           'div',
           { style: 'display:flex;flex-direction:column;gap:8px' },
           el('p', {}, st?.pje ? 'O PJe está aberto, mas nenhum processo foi detectado nesta aba.' : 'A aba ativa não é uma página do PJe.'),
-          el('p', { class: 'ajuda' }, 'Abra os autos de um processo (ou uma tarefa com o processo) no PJe de qualquer tribunal, mantenha a aba ativa e tente de novo. A coleta usa a sua própria sessão no PJe; nada é enviado a servidores do NexIA.')
+          el('p', { class: 'ajuda' }, 'Abra os autos de um processo (ou uma tarefa com o processo) no PJe de qualquer tribunal, mantenha a aba ativa e tente de novo. A coleta usa a sua própria sessão no PJe; nada é enviado a servidores do Nexpra.')
         ),
         botoes: [{ id: 'ok', rotulo: 'Entendi', primario: true }]
       });

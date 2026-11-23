@@ -1,7 +1,7 @@
 /**
  * Dicionário local de prenomes brasileiros frequentes (normalizados: minúsculos,
  * sem acento). Base para a detecção de nomes de pessoas SEM IA — requisito de
- * privacidade do NexIA: nenhum trecho de texto é enviado a modelo para "achar nomes".
+ * privacidade do Nexpra: nenhum trecho de texto é enviado a modelo para "achar nomes".
  *
  * A detecção é heurística (prenome conhecido + sobrenome(s) capitalizado(s)) e
  * por isso passa pela revisão humana na aba "Anonimizar". Prenomes que também são

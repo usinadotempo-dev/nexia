@@ -1,4 +1,4 @@
-# Arquitetura do NexIA
+# Arquitetura do Nexpra
 
 Extensão Chrome MV3 em TypeScript estrito, empacotada com Vite + @crxjs. Sem servidor
 próprio: tudo roda no navegador; a IA é chamada com a chave do usuário. Visão de produto e
@@ -11,7 +11,7 @@ decisões em [`visao-multiarea.md`](./visao-multiarea.md).
 | Painel lateral (página da extensão) | `sidepanel.html`, `src/sidepanel/**` | Interface principal: fontes, assistente, proteção, consultas. Detém o estado da sessão (fontes, mapa de pseudônimos, conversa) **só em memória**. Extrai PDF/DOCX/imagens localmente. |
 | Service worker | `src/background/**` | Detém as chaves; chama os LLMs (streaming e laço de ferramentas); executa as consultas a APIs públicas; guarda de saída; menus de contexto; relay de OCR; BM25 da biblioteca. |
 | Offscreen | `src/offscreen/**` | Inferência de OCR PP-OCR (ONNX Runtime Web, WebGPU→WASM). |
-| Content script PJe | `src/content/**` | Só em `*.jus.br`: relay de auth, coleta do processo sob demanda (porta `nexia-pje`), botão "NexIA". |
+| Content script PJe | `src/content/**` | Só em `*.jus.br`: relay de auth, coleta do processo sob demanda (porta `nexia-pje`), botão "Nexpra". |
 | Scripts MAIN world | `src/main/**` | Captura passiva de cabeçalhos de auth do PJe; fetch de fallback. |
 | Opções | `options.html`, `src/options/**` | Provedor/chaves, área, privacidade e guarda, integrações, receitas próprias, biblioteca, conector PJe. |
 

@@ -37,12 +37,12 @@ export function mostrarOnboarding(ctx: Contexto): Promise<void> {
           });
           grade.append(b);
         }
-        const marca = el('div', { class: 'marca' }, logotipo(), 'NexIA');
+        const marca = el('div', { class: 'marca' }, logotipo(), 'Nexpra');
         caixa.append(
           passos(),
           marca,
           el('h2', { id: 'ob-titulo' }, 'Qual é a sua área?'),
-          el('p', {}, 'Ela define as receitas prontas, as consultas oferecidas e os dados protegidos por padrão. Dá para trocar a qualquer momento no topo do painel.'),
+          el('p', {}, 'Ela define as funcionalidades prontas, as consultas oferecidas e os dados protegidos por padrão. Dá para trocar a qualquer momento no topo do painel.'),
           grade,
           el('div', { class: 'linha-botoes', style: 'justify-content:flex-end' }, botao('Continuar', () => { passo = 1; void pintar(); }, { classe: 'primario' }))
         );
@@ -77,7 +77,7 @@ export function mostrarOnboarding(ctx: Contexto): Promise<void> {
             'p',
             {},
             temChave
-              ? 'Há uma chave de IA configurada. Adicione fontes e use as receitas da sua área.'
+              ? 'Há uma chave de IA configurada. Adicione fontes e use as funcionalidades da sua área.'
               : 'Para o Assistente, informe sua chave de API (Google Gemini, Anthropic Claude ou OpenAI) nas opções — ela fica só neste navegador. Sem chave, o anonimizador e as consultas já funcionam.'
           ),
           el(

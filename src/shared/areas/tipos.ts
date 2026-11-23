@@ -1,6 +1,26 @@
 import type { TipoEntidade } from '../anonimizador/detectores.ts';
 
-export type AreaId = 'juridico' | 'contabil' | 'saude' | 'engenharia' | 'rh' | 'geral';
+export type AreaId =
+  | 'juridico'
+  | 'contabil'
+  | 'saude'
+  | 'psicologia'
+  | 'engenharia'
+  | 'imobiliario'
+  | 'seguros'
+  | 'financeiro'
+  | 'educacao'
+  | 'contratacoes'
+  | 'social'
+  | 'cartorios'
+  | 'rh'
+  | 'geral';
+
+/** Dados pessoais mascarados por padrão em todas as áreas. */
+export const BASE_PII: TipoEntidade[] = [
+  'PESSOA', 'CPF', 'RG', 'CNH', 'PIS', 'CNS', 'TITULO_ELEITOR', 'PASSAPORTE', 'CEP', 'ENDERECO', 'TELEFONE', 'EMAIL',
+  'CARTAO', 'CONTA_BANCARIA', 'PIX', 'DATA_NASCIMENTO', 'RENAVAM', 'PLACA', 'IP', 'PERSONALIZADO'
+];
 
 export interface CampoReceita {
   id: string;

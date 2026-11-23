@@ -1,6 +1,6 @@
 /**
- * Painel lateral do NexIA — espaço de trabalho multiárea:
- * Fontes → Proteção (anonimização local) → Assistente (IA + receitas + ferramentas) → Consultas (APIs públicas).
+ * Painel lateral do Nexpra — espaço de trabalho multiárea:
+ * Fontes → Proteção (anonimização local) → Assistente (IA + funcionalidades + ferramentas) → Consultas (APIs públicas).
  */
 import { AREAS, ORDEM_AREAS } from '@shared/areas/catalogo';
 import { CHAVES_STORAGE } from '@shared/constantes';
@@ -92,7 +92,7 @@ function abrirMenuArea(): void {
       if (area.id === espaco.area.id) return;
       espaco.trocarArea(area);
       void contexto.salvarConfig({ areaAtiva: area.id });
-      contexto.status(`Área: ${area.nome}. Receitas, ferramentas e detectores ajustados.`);
+      contexto.status(`Área: ${area.nome}. Funcionalidades, consultas e proteção ajustadas.`);
     });
     lista.append(opcao);
   }
@@ -118,7 +118,7 @@ document.addEventListener('keydown', (ev) => {
 const topo = el(
   'header',
   { class: 'topo' },
-  el('div', { class: 'marca' }, logotipo(), 'NexIA'),
+  el('div', { class: 'marca' }, logotipo(), 'Nexpra'),
   el('div', { class: 'espaco' }),
   botaoArea,
   botaoIcone('engrenagem', 'Opções (provedor de IA, chaves, privacidade)', () => chrome.runtime.openOptionsPage())
@@ -160,7 +160,7 @@ function atualizarBarraProtecao(): void {
 // ---------------------------------------------------------------------------
 // Abas
 
-const navAbas = el('nav', { class: 'abas', role: 'tablist', 'aria-label': 'Seções do NexIA' });
+const navAbas = el('nav', { class: 'abas', role: 'tablist', 'aria-label': 'Seções do Nexpra' });
 for (const aba of ABAS) {
   const contador = el('span', { class: 'contador', hidden: true });
   const b = el('button', { type: 'button', class: 'aba', role: 'tab', id: `aba-${aba.id}`, 'aria-controls': `painel-${aba.id}`, 'aria-selected': 'false' }, icone(aba.icone), aba.rotulo, contador);
@@ -275,5 +275,5 @@ chrome.runtime.onMessage.addListener(() => false);
 
 principal().catch((erro: unknown) => {
   app.textContent = '';
-  app.append(el('div', { class: 'vazio' }, el('strong', {}, 'Não foi possível iniciar o NexIA'), el('span', {}, erro instanceof Error ? erro.message : String(erro))));
+  app.append(el('div', { class: 'vazio' }, el('strong', {}, 'Não foi possível iniciar o Nexpra'), el('span', {}, erro instanceof Error ? erro.message : String(erro))));
 });

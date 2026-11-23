@@ -1,4 +1,4 @@
-import type { ConfigNexia } from '@shared/tipos';
+import type { ConfigNexpra } from '@shared/tipos';
 
 export type IdAba = 'fontes' | 'assistente' | 'protecao' | 'consultas';
 
@@ -6,7 +6,7 @@ export type IdAba = 'fontes' | 'assistente' | 'protecao' | 'consultas';
 export interface Contexto {
   status(texto: string, opcoes?: { carregando?: boolean; erro?: boolean }): void;
   irPara(aba: IdAba): void;
-  salvarConfig(parcial: Partial<ConfigNexia>): Promise<void>;
+  salvarConfig(parcial: Partial<ConfigNexpra>): Promise<void>;
 }
 
 export interface Visao {

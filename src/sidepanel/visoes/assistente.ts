@@ -9,10 +9,13 @@ import { enviar, type RespostaFerramenta, type RespostaModelosBuscar } from '@sh
 import type { MensagemLLM, RequisicaoLLM } from '@shared/tipos';
 import type { Contexto, Visao } from '../contexto';
 import { baixar, botao, botaoIcone, copiar, dialogo, el, estimarTokens, icone, interruptor, toast } from '../dom';
-import { espaco, type MensagemExibida } from '../estado';
+import { espaco, type ConsultaExibida, type MensagemExibida } from '../estado';
 import { plural } from './comum';
 
 const ACK = 'Recebi as fontes e estou pronto para ajudar com base nelas.';
+
+/** Quanto a resposta da IA pode esperar por uma consulta antes de seguir sem ela. */
+const PRAZO_CONSULTA_IA_MS = 30_000;
 
 /** Ferramentas da área que podem ser oferecidas ao modelo (respeitando chaves e preferências). */
 function ferramentasDisponiveis(): string[] {
@@ -91,8 +94,14 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
     definirOcupado(true);
     resposta.erro = undefined;
     resposta.texto = '';
+    atualizarBolha(resposta, true); // tira da tela o aviso de erro anterior (ex.: "Tentar de novo")
     ctx.status('Gerando resposta…', { carregando: true });
     abortar = gerarStream(requisicao(guardaConfirmada, temperatura), {
+      aoPulso: (segundos) => {
+        if (resposta.consultas.some((c) => c.estado === 'andamento')) return; // a consulta já mostra seu tempo
+        const tempo = segundos >= 60 ? `${Math.floor(segundos / 60)} min ${segundos % 60} s` : `${segundos} s`;
+        ctx.status(`Gerando resposta… ${tempo} — textos longos podem levar alguns minutos.`, { carregando: true });
+      },
       aoTrecho: (t) => {
         resposta.texto += t;
         atualizarBolha(resposta, true);
@@ -120,14 +129,23 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
       },
       aoFerramenta: async (nome, args) => {
         const def = obterFerramenta(nome);
-        const chip = { titulo: def?.titulo ?? nome, estado: 'andamento' as 'andamento' | 'ok' | 'falha', detalhe: def ? `${def.fonte} — envia ${def.envia}` : undefined };
+        const chip: ConsultaExibida = { titulo: def?.titulo ?? nome, estado: 'andamento', detalhe: def ? `${def.fonte} — envia ${def.envia}` : undefined, inicio: Date.now() };
+        // "Pular": o usuário decide seguir sem esperar um serviço lento.
+        const pulo = new Promise<RespostaFerramenta>((resolver) => {
+          chip.pular = () => resolver({ texto: '', falha: 'Consulta pulada pelo usuário; responda com o que já está disponível.' });
+        });
         resposta.consultas.push(chip);
         atualizarBolha(resposta, true);
         ctx.status(`Consultando: ${chip.titulo}…`, { carregando: true });
+        const relogio = setInterval(() => atualizarBolha(resposta, true), 1000);
         // Marcadores ([CNPJ_1]) são resolvidos AQUI, localmente, só para a consulta.
         const argsReais: Record<string, unknown> = {};
         for (const [k, v] of Object.entries(args)) argsReais[k] = typeof v === 'string' ? espaco.paraTela(v) : v;
-        const r = await enviar<RespostaFerramenta>('FERRAMENTA_EXECUTAR', { nome, args: argsReais });
+        const r = await Promise.race([
+          enviar<RespostaFerramenta>('FERRAMENTA_EXECUTAR', { nome, args: argsReais, prazoMs: PRAZO_CONSULTA_IA_MS }),
+          pulo
+        ]).finally(() => clearInterval(relogio));
+        chip.pular = undefined;
         chip.estado = r.falha ? 'falha' : 'ok';
         if (r.falha) chip.detalhe = r.falha;
         atualizarBolha(resposta, true);
@@ -181,8 +199,8 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
   function abrirListaReceitas(): void {
     if (folhaHost.firstChild) return fecharFolha();
     const receitas = receitasDaArea(espaco.area, espaco.config.receitasPersonalizadas);
-    const cab = el('div', { class: 'cab' }, icone('receitas'), el('strong', {}, `Receitas — ${espaco.area.nome}`), botaoIcone('fechar', 'Fechar', fecharFolha));
-    const folha = el('div', { class: 'folha', role: 'dialog', 'aria-label': 'Receitas' }, cab);
+    const cab = el('div', { class: 'cab' }, icone('receitas'), el('strong', {}, `Funcionalidades — ${espaco.area.nome}`), botaoIcone('fechar', 'Fechar', fecharFolha));
+    const folha = el('div', { class: 'folha', role: 'dialog', 'aria-label': 'Funcionalidades' }, cab);
     for (const r of receitas) {
       const opcao = el('button', { type: 'button', class: 'opcao-receita' }, el('b', {}, r.nome + (r.personalizada ? ' (minha)' : '')), el('span', {}, r.descricao));
       opcao.addEventListener('click', () => abrirFormularioReceita(r));
@@ -197,7 +215,7 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
     const valores = new Map<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>();
     const conteudo = el('div', { class: 'conteudo' }, el('p', { class: 'ajuda' }, receita.descricao));
     if (receita.exigeFontes && espaco.fontesIncluidas().length === 0) {
-      conteudo.append(el('div', { class: 'erro-msg' }, 'Esta receita trabalha sobre fontes. Adicione ao menos uma em "Fontes".'));
+      conteudo.append(el('div', { class: 'erro-msg' }, 'Esta funcionalidade trabalha sobre fontes. Adicione ao menos uma em "Fontes".'));
     }
     for (const c of receita.campos ?? []) {
       let campo: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -226,7 +244,7 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
       }
       if (receita.exigeFontes && espaco.fontesIncluidas().length === 0) {
         ctx.irPara('fontes');
-        toast('Adicione uma fonte para usar esta receita.');
+        toast('Adicione uma fonte para usar esta funcionalidade.');
         return;
       }
       let prompt = preencherReceita(receita, preenchidos);
@@ -253,7 +271,7 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
     const folha = el(
       'div',
       { class: 'folha', role: 'dialog', 'aria-label': receita.nome },
-      el('div', { class: 'cab' }, botaoIcone('voltar', 'Voltar às receitas', abrirListaReceitas), el('strong', {}, receita.nome), botaoIcone('fechar', 'Fechar', fecharFolha)),
+      el('div', { class: 'cab' }, botaoIcone('voltar', 'Voltar às funcionalidades', abrirListaReceitas), el('strong', {}, receita.nome), botaoIcone('fechar', 'Fechar', fecharFolha)),
       conteudo
     );
     conteudo.append(el('div', { class: 'linha-botoes' }, botao('Executar', () => void executarReceita(), { classe: 'primario', icone: 'enviar' })));
@@ -272,7 +290,7 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
   function montarMensagem(m: MensagemExibida): HTMLElement {
     const caixa = el('div', { class: `msg ${m.papel}` });
     if (m.papel === 'usuario') {
-      if (m.receita) caixa.append(el('span', { class: 'rotulo-receita' }, `Receita: ${m.receita}`));
+      if (m.receita) caixa.append(el('span', { class: 'rotulo-receita' }, `Funcionalidade: ${m.receita}`));
       caixa.append(el('div', { class: 'bolha' }, espaco.paraTela(m.texto)));
       return caixa;
     }
@@ -285,7 +303,21 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
     caixa.textContent = '';
     caixa.classList.toggle('gerando', gerando);
     for (const c of m.consultas) {
-      caixa.append(el('span', { class: `consulta-chip ${c.estado}`, title: c.detalhe }, `${c.estado === 'andamento' ? 'Consultando' : 'Consultou'}: ${c.titulo}`));
+      if (c.estado === 'andamento') {
+        const segundos = c.inicio ? Math.floor((Date.now() - c.inicio) / 1000) : 0;
+        const pular = c.pular;
+        caixa.append(
+          el(
+            'div',
+            { class: 'linha-botoes' },
+            el('span', { class: 'consulta-chip andamento', title: c.detalhe }, `Consultando: ${c.titulo}${segundos >= 3 ? ` · ${segundos} s` : ''}`),
+            pular ? botao('Pular', () => pular(), { classe: 'fantasma pequeno', titulo: 'Seguir sem esperar esta consulta' }) : null
+          )
+        );
+      } else {
+        const rotulo = c.estado === 'ok' ? `Consultou: ${c.titulo}` : `Não consultou: ${c.titulo}`;
+        caixa.append(el('span', { class: `consulta-chip ${c.estado}`, title: c.detalhe }, c.estado === 'falha' && c.detalhe ? `${rotulo} — ${c.detalhe}` : rotulo));
+      }
     }
     const bolha = el('div', { class: 'bolha' });
     bolha.innerHTML = conteudoBolha(m);
@@ -343,7 +375,7 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
       { class: 'vazio' },
       icone('conversa'),
       el('strong', {}, `Assistente — ${area.nome}`),
-      el('span', {}, espaco.fontesIncluidas().length ? `Pergunte sobre as ${plural(espaco.fontesIncluidas().length, 'fonte')} carregadas ou comece por uma receita.` : 'Converse livremente ou adicione fontes para a IA trabalhar sobre seus documentos.'),
+      el('span', {}, espaco.fontesIncluidas().length ? `Pergunte sobre as ${plural(espaco.fontesIncluidas().length, 'fonte')} carregadas ou comece por uma funcionalidade.` : 'Converse livremente ou adicione fontes para a IA trabalhar sobre seus documentos.'),
       sugestoes,
       area.aviso ? el('p', { class: 'aviso-area' }, area.aviso) : null
     );
@@ -423,7 +455,7 @@ export function criarVisaoAssistente(ctx: Contexto): Visao {
   const barra = el(
     'div',
     { class: 'barra-compositor' },
-    botao('Receitas', abrirListaReceitas, { classe: 'fantasma pequeno', icone: 'receitas', titulo: 'Prompts prontos da sua área' }),
+    botao('Funcionalidades', abrirListaReceitas, { classe: 'fantasma pequeno', icone: 'receitas', titulo: 'Tarefas prontas da sua área (resumos, análises, minutas…)' }),
     consultasAuto,
     el('span', { class: 'espaco' }),
     botao('Nova conversa', () => {

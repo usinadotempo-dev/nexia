@@ -2,7 +2,7 @@
  * Conector PJe (content script, isolated world).
  * - Em todos os frames: repassa ao service worker o snapshot de auth capturado no page world.
  * - No frame principal de uma página do PJe: responde ao painel (STATUS_ABA), coleta o
- *   processo sob demanda (porta nexia-pje) e mostra um botão discreto "Abrir no NexIA".
+ *   processo sob demanda (porta nexia-pje) e mostra um botão discreto "Abrir no Nexpra".
  * A interface de trabalho vive no painel lateral (multiárea); aqui não há UI pesada.
  */
 import { PORTA_PJE } from '@shared/constantes';
@@ -11,7 +11,7 @@ import { enviar, type MensagemPjeEntrada, type MensagemPjeSaida, type RespostaCo
 import { coletarProcesso, idProcessoDaTela } from './pje/contexto';
 import { instalarRelayAuth } from './ponte-main';
 import { hostBloqueado, pareceSerPje } from './sonda-pje';
-import { criarRaizNexia } from './ui/raiz-shadow';
+import { criarRaizNexpra } from './ui/raiz-shadow';
 
 const LOGO_FAB = `<svg viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="#fff"/><path d="M42 90 V40 L82 88 V60" stroke="#0a0a0a" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="#0a0a0a"/></svg>`;
 
@@ -32,16 +32,16 @@ function toast(mensagem: string): void {
 
 function montarFab(): void {
   if (fab) return;
-  raiz = criarRaizNexia();
+  raiz = criarRaizNexpra();
   fab = document.createElement('button');
   fab.className = 'nx-fab';
   fab.type = 'button';
-  fab.title = 'Abrir este processo no painel do NexIA';
-  fab.innerHTML = `${LOGO_FAB}<span>NexIA</span>`;
+  fab.title = 'Abrir este processo no painel do Nexpra';
+  fab.innerHTML = `${LOGO_FAB}<span>Nexpra</span>`;
   fab.addEventListener('click', () => {
     enviar('PAINEL_ABRIR')
       .then(() => toast('No painel, use "Fontes → Processo do PJe" para importar este processo.'))
-      .catch(() => toast('Clique no ícone do NexIA na barra do navegador para abrir o painel e importe o processo em "Fontes".'));
+      .catch(() => toast('Clique no ícone do Nexpra na barra do navegador para abrir o painel e importe o processo em "Fontes".'));
   });
   raiz.append(fab);
 }

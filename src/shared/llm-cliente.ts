@@ -12,6 +12,8 @@ export interface CallbacksStream {
   aoGuarda?(achados: AchadoGuarda[]): void;
   /** O modelo pediu uma ferramenta: devolver o texto do resultado (já reanonimizado). */
   aoFerramenta?(nome: string, args: Record<string, unknown>): Promise<{ conteudo: string; erro?: boolean }>;
+  /** Sinal de vida durante esperas longas (segundos desde o início). */
+  aoPulso?(segundos: number): void;
 }
 
 /** Inicia uma geração. Retorna função para abortar. */
@@ -32,6 +34,9 @@ export function gerarStream(requisicao: RequisicaoLLM, callbacks: CallbacksStrea
     switch (mensagem.tipo) {
       case 'trecho':
         callbacks.aoTrecho(mensagem.texto);
+        break;
+      case 'pulso':
+        callbacks.aoPulso?.(mensagem.segundos);
         break;
       case 'fim':
         encerrar();
@@ -68,7 +73,9 @@ export function gerarStream(requisicao: RequisicaoLLM, callbacks: CallbacksStrea
   porta.onDisconnect.addListener(() => {
     if (!encerrado) {
       encerrado = true;
-      callbacks.aoErro('A conexão com o serviço da extensão foi interrompida. Tente novamente.');
+      callbacks.aoErro(
+        'A resposta foi interrompida porque o processo em segundo plano da extensão foi encerrado (pelo Chrome ou porque a extensão foi recarregada). Tente de novo.'
+      );
     }
   });
 

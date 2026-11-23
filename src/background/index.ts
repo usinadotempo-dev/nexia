@@ -19,7 +19,7 @@ import type {
   RespostaOcrPagina
 } from '@shared/mensagens';
 import { limparModelos, listarModelos, obterMeta } from '@shared/modelos-store';
-import type { MensagemLLM, ModeloMinuta, ParteResultado, RequisicaoLLM } from '@shared/tipos';
+import type { ConfigNexpra, MensagemLLM, ModeloMinuta, ParteResultado, RequisicaoLLM } from '@shared/tipos';
 import { obterConfig, salvarConfig } from './config';
 import { obterChaveApi, salvarChaveApi, statusChaves } from './cofre-chaves';
 import { executarFerramenta } from './ferramentas/executor';
@@ -74,7 +74,7 @@ async function prepararGeracao() {
   const config = await obterConfig();
   const chaveApi = await obterChaveApi(config.provedorAtivo);
   if (!chaveApi) {
-    throw new Error('Chave de API não configurada. Abra as opções do NexIA e informe a chave do provedor ativo. (O anonimizador e as consultas funcionam sem chave.)');
+    throw new Error('Chave de API não configurada. Abra as opções do Nexpra e informe a chave do provedor ativo. (O anonimizador e as consultas funcionam sem chave.)');
   }
   const modelo = config.modelos[config.provedorAtivo];
   return {
@@ -85,9 +85,14 @@ async function prepararGeracao() {
   };
 }
 
-function completarRequisicao(req: RequisicaoLLM, temperaturaPadrao: number, maxTokensPadrao: number, tetoTokens: number): RequisicaoLLM {
-  const desejado = req.maxTokens ?? maxTokensPadrao;
-  return { ...req, temperatura: req.temperatura ?? temperaturaPadrao, maxTokens: Math.min(desejado, tetoTokens) };
+function completarRequisicao(req: RequisicaoLLM, config: ConfigNexpra, tetoTokens: number): RequisicaoLLM {
+  const desejado = req.maxTokens ?? config.maxTokens;
+  return {
+    ...req,
+    temperatura: req.temperatura ?? config.temperatura,
+    maxTokens: Math.min(desejado, tetoTokens),
+    esforco: req.esforco ?? config.esforcoRaciocinio
+  };
 }
 
 /** Todo o texto que sairia para o provedor (para a guarda de saída). */
@@ -181,7 +186,7 @@ async function tratarPedido(pedido: Pedido): Promise<unknown> {
     case 'LLM_GERAR': {
       const { requisicao } = pedido.dados as DadosLlmGerar;
       const { provedor, opcoesBase, config, tetoTokens } = await prepararGeracao();
-      const texto = await provedor.gerar(completarRequisicao(requisicao, config.temperatura, config.maxTokens, tetoTokens), opcoesBase);
+      const texto = await provedor.gerar(completarRequisicao(requisicao, config, tetoTokens), opcoesBase);
       return { texto };
     }
     case 'MODELOS_BUSCAR':
@@ -194,8 +199,8 @@ async function tratarPedido(pedido: Pedido): Promise<unknown> {
     case 'OCR_PAGINA':
       return ocrPagina(pedido.dados as DadosOcrPagina);
     case 'FERRAMENTA_EXECUTAR': {
-      const { nome, args } = pedido.dados as DadosFerramentaExecutar;
-      return executarFerramenta(nome, args, await obterConfig());
+      const { nome, args, prazoMs } = pedido.dados as DadosFerramentaExecutar;
+      return executarFerramenta(nome, args, await obterConfig(), prazoMs);
     }
     case 'DADOS_LIMPAR': {
       await chrome.storage.local.clear();
@@ -273,10 +278,21 @@ chrome.runtime.onConnect.addListener((porta) => {
     }
     if (mensagem.tipo !== 'iniciar') return;
 
+    // O Chrome encerra o service worker após ~30 s sem atividade de extensão — e esperar
+    // uma resposta HTTP não conta. Respostas sem streaming (laço de ferramentas, minutas
+    // longas) e consultas lentas passam disso: um pulso a cada 20 s mantém o SW vivo
+    // (mensagem na porta + chamada trivial de API) e avisa o painel do andamento.
+    const inicio = Date.now();
+    const pulso = setInterval(() => {
+      enviar({ tipo: 'pulso', segundos: Math.round((Date.now() - inicio) / 1000) });
+      void chrome.runtime.getPlatformInfo().catch(() => undefined);
+    }, 20_000);
+    porta.onDisconnect.addListener(() => clearInterval(pulso));
+
     void (async () => {
       try {
         const { provedor, opcoesBase, config, tetoTokens } = await prepararGeracao();
-        const requisicao = completarRequisicao(mensagem.requisicao, config.temperatura, config.maxTokens, tetoTokens);
+        const requisicao = completarRequisicao(mensagem.requisicao, config, tetoTokens);
 
         // Guarda de saída: última barreira, independente da UI.
         if (config.guardaSaida !== 'desligada') {
@@ -313,16 +329,19 @@ chrome.runtime.onConnect.addListener((porta) => {
           const ultima = rodada === LIMITES.MAX_RODADAS_FERRAMENTAS;
           // As ferramentas continuam declaradas mesmo na última rodada: alguns provedores
           // recusam histórico com chamadas de ferramenta sem a declaração correspondente.
+          let inicioDaRodada = true;
           const resposta = await provedor.gerarComFerramentas(
             { ...requisicao, mensagens },
             { ...opcoesBase, sinal: controlador.signal },
-            ferramentas
+            ferramentas,
+            (t) => {
+              // O texto chega aos poucos; rodadas sucessivas são separadas por parágrafo.
+              const trecho = (inicioDaRodada && acumulado ? '\n\n' : '') + t;
+              inicioDaRodada = false;
+              acumulado += trecho;
+              enviar({ tipo: 'trecho', texto: trecho });
+            }
           );
-          if (resposta.texto) {
-            const trecho = (acumulado ? '\n\n' : '') + resposta.texto;
-            acumulado += trecho;
-            enviar({ tipo: 'trecho', texto: trecho });
-          }
           if (resposta.chamadas.length === 0) break;
           if (ultima) {
             const aviso = `${acumulado ? '\n\n' : ''}_(Limite de ${LIMITES.MAX_RODADAS_FERRAMENTAS} rodadas de consultas atingido. Peça para continuar, se necessário.)_`;
@@ -350,6 +369,8 @@ chrome.runtime.onConnect.addListener((porta) => {
           log.aviso('Falha na geração', String(erro));
           enviar({ tipo: 'erro', mensagem: erro instanceof Error ? erro.message : String(erro) });
         }
+      } finally {
+        clearInterval(pulso);
       }
     })();
   });
@@ -365,8 +386,8 @@ function configurarPainel(): void {
 chrome.runtime.onInstalled.addListener(() => {
   configurarPainel();
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({ id: 'nexia-selecao', title: 'NexIA: levar seleção para o painel', contexts: ['selection'] });
-    chrome.contextMenus.create({ id: 'nexia-pagina', title: 'NexIA: levar esta página para o painel', contexts: ['page'] });
+    chrome.contextMenus.create({ id: 'nexia-selecao', title: 'Nexpra: levar seleção para o painel', contexts: ['selection'] });
+    chrome.contextMenus.create({ id: 'nexia-pagina', title: 'Nexpra: levar esta página para o painel', contexts: ['page'] });
   });
 });
 chrome.runtime.onStartup.addListener(configurarPainel);

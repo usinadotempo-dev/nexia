@@ -1,5 +1,5 @@
 /**
- * Motor de pseudonimização do NexIA — 100% local, sem rede, sem IA.
+ * Motor de pseudonimização do Nexpra — 100% local, sem rede, sem IA.
  *
  * Uma SessaoAnonimizacao mantém um registro estável "valor original → pseudônimo"
  * válido para TODOS os documentos e mensagens da sessão: o mesmo CPF vira sempre
@@ -42,7 +42,7 @@ export interface ResultadoAnonimizacaoTexto {
   substituicoes: number;
 }
 
-/** Pseudônimos gerados pelo NexIA: [CPF_1], [PESSOA_12], [PARTE AUTORA], [PARTE AUTORA 2]. */
+/** Pseudônimos gerados pelo Nexpra: [CPF_1], [PESSOA_12], [PARTE AUTORA], [PARTE AUTORA 2]. */
 export const REGEX_TOKEN = /\[(?:[A-Z_]+_\d+|[A-ZÁÉÍÓÚÂÊÔÃÕÇ][A-ZÁÉÍÓÚÂÊÔÃÕÇ ]+?(?: \d+)?)\]/g;
 
 function chaveDe(tipo: TipoEntidade, valor: string): string {
@@ -93,6 +93,21 @@ export class SessaoAnonimizacao {
   /** Zera as contagens (antes de reprocessar todos os documentos). */
   zerarContagens(): void {
     for (const e of this.registro.values()) e.ocorrencias = 0;
+  }
+
+  /**
+   * Apaga da memória as entidades sem nenhuma ocorrência (ex.: após remover uma fonte).
+   * Só deve ser chamado quando nenhum texto já enviado depende desses pseudônimos.
+   */
+  descartarSemOcorrencias(): number {
+    let removidas = 0;
+    for (const [chave, e] of this.registro) {
+      if (e.ocorrencias > 0) continue;
+      this.registro.delete(chave);
+      this.porToken.delete(e.token);
+      removidas++;
+    }
+    return removidas;
   }
 
   private tokenPara(span: Span): EntidadeRegistro {

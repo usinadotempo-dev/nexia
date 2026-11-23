@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>NexIA — Opções</title>
+  <title>Nexpra — Opções</title>
   <link rel="stylesheet" href="./public/options.css">
 </head>
 <body>
   <header class="topo">
     <div class="marca">
       <svg viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="currentColor"/><path d="M42 90 V40 L82 88 V60" stroke="var(--fundo)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="var(--fundo)"/></svg>
-      <span>NexIA</span>
+      <span>Nexpra</span>
     </div>
     <nav aria-label="Seções das opções">
-      <a href="#ia">IA</a><a href="#area">Área</a><a href="#privacidade">Privacidade</a><a href="#integracoes">Integrações</a><a href="#receitas">Receitas</a><a href="#biblioteca">Biblioteca</a><a href="#pje">PJe</a><a href="#dados">Dados</a>
+      <a href="#ia">IA</a><a href="#area">Área</a><a href="#privacidade">Privacidade</a><a href="#integracoes">Integrações</a><a href="#receitas">Funcionalidades</a><a href="#biblioteca">Biblioteca</a><a href="#pje">PJe</a><a href="#dados">Dados</a>
     </nav>
   </header>
 
@@ -49,9 +49,18 @@
           <input id="chave-openai" type="password" placeholder="sk-…" autocomplete="off">
         </div>
       </div>
+      <div class="campo">
+        <label for="esforco">Profundidade de raciocínio (modelos Claude)</label>
+        <select id="esforco">
+          <option value="low">Baixa — mais rápida e econômica</option>
+          <option value="medium">Média — recomendada</option>
+          <option value="high">Alta — mais cuidadosa, mais lenta e cara</option>
+        </select>
+        <span class="ajuda">Quanto o modelo pensa antes de responder. Afeta o tempo de espera e o custo.</span>
+      </div>
       <div class="grade-2">
         <div class="campo">
-          <label for="temperatura">Temperatura (0–1)</label>
+          <label for="temperatura">Temperatura (0–1; ignorada pelos modelos mais novos)</label>
           <input id="temperatura" type="number" min="0" max="1" step="0.1">
         </div>
         <div class="campo">
@@ -63,7 +72,7 @@
 
     <section class="cartao" id="area">
       <h2>Área profissional</h2>
-      <p class="ajuda">Define a persona do assistente, as receitas, as consultas oferecidas e os dados protegidos por padrão. Também pode ser trocada no topo do painel.</p>
+      <p class="ajuda">Define a persona do assistente, as funcionalidades, as consultas oferecidas e os dados protegidos por padrão. Também pode ser trocada no topo do painel.</p>
       <div class="campo">
         <label for="area-ativa">Área padrão</label>
         <select id="area-ativa"></select>
@@ -126,24 +135,24 @@
     </section>
 
     <section class="cartao" id="receitas">
-      <h2>Minhas receitas</h2>
-      <p class="ajuda">Prompts reutilizáveis que aparecem em "Receitas" no Assistente. Use {{instrucoes}} para abrir um campo de instruções.</p>
+      <h2>Minhas funcionalidades</h2>
+      <p class="ajuda">Tarefas que você repete com frequência, salvas como instrução pronta. Elas aparecem no botão "Funcionalidades" do Assistente, junto com as da sua área. Use {{instrucoes}} no texto para abrir um campo de instruções na hora de usar.</p>
       <ul id="lista-receitas" class="lista-simples"></ul>
       <div class="grade-2">
         <div class="campo"><label for="rc-nome">Nome</label><input id="rc-nome" type="text"></div>
         <div class="campo"><label for="rc-area">Área</label><select id="rc-area"></select></div>
       </div>
       <div class="campo"><label for="rc-descricao">Descrição curta</label><input id="rc-descricao" type="text"></div>
-      <div class="campo"><label for="rc-prompt">Prompt</label><textarea id="rc-prompt" rows="5"></textarea></div>
+      <div class="campo"><label for="rc-prompt">Instrução para a IA</label><textarea id="rc-prompt" rows="5"></textarea></div>
       <div class="linha-acoes">
         <select id="rc-formato" aria-label="Formato da saída"><option value="markdown">Saída estruturada (markdown)</option><option value="documento">Texto corrido para documento</option></select>
-        <button id="btn-receita" class="botao" type="button">Adicionar receita</button>
+        <button id="btn-receita" class="botao" type="button">Adicionar funcionalidade</button>
       </div>
     </section>
 
     <section class="cartao" id="biblioteca">
       <h2>Biblioteca de modelos</h2>
-      <p class="ajuda">Uma pasta local com seus modelos (<code>.docx</code> ou <code>.txt</code>): petições, laudos, pareceres, contratos. O conteúdo é indexado localmente e só o modelo escolhido para uma receita entra no prompt (pseudonimizado se a proteção estiver ligada).</p>
+      <p class="ajuda">Uma pasta local com seus modelos (<code>.docx</code> ou <code>.txt</code>): petições, laudos, pareceres, contratos. O conteúdo é indexado localmente e só o modelo escolhido para uma funcionalidade entra no pedido à IA (pseudonimizado se a proteção estiver ligada).</p>
       <div class="linha-acoes">
         <button id="btn-pasta" class="botao" type="button">Escolher pasta</button>
         <button id="btn-reindexar" class="botao fantasma" type="button">Reindexar</button>
@@ -154,7 +163,7 @@
 
     <section class="cartao" id="pje">
       <h2>Conector PJe</h2>
-      <p class="ajuda">Em páginas do PJe (<code>*.jus.br</code>) com processo aberto, aparece um botão "NexIA" e o painel pode importar os autos usando a sua sessão. Liste hosts onde ele deve ficar desligado, um por linha.</p>
+      <p class="ajuda">Em páginas do PJe (<code>*.jus.br</code>) com processo aberto, aparece um botão "Nexpra" e o painel pode importar os autos usando a sua sessão. Liste hosts onde ele deve ficar desligado, um por linha.</p>
       <textarea id="hosts-bloqueados" rows="3" spellcheck="false" aria-label="Hosts bloqueados"></textarea>
       <div class="grade-2" style="margin-top:12px">
         <div class="campo"><label for="ocr-doc">Máx. de páginas de OCR por documento</label><input id="ocr-doc" type="number" min="1" max="500"></div>

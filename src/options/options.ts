@@ -5,7 +5,7 @@ import { maxSaidaDoModelo, PROVEDOR_MODELOS } from '@shared/constantes';
 import { FERRAMENTAS } from '@shared/ferramentas/definicoes';
 import { enviar, type RespostaChaveStatus, type RespostaConfig, type RespostaModelosStatus } from '@shared/mensagens';
 import { listarModelos } from '@shared/modelos-store';
-import type { ConfigNexia, ModoGuarda, ProvedorId } from '@shared/tipos';
+import type { ConfigNexpra, EsforcoRaciocinio, ModoGuarda, ProvedorId } from '@shared/tipos';
 import { escolherEIndexarPasta, reindexarPastaSalva } from './modelos/pasta-local';
 
 const PROVEDORES: ProvedorId[] = ['gemini', 'anthropic', 'openai'];
@@ -48,7 +48,7 @@ function atualizarTetoTokens(): void {
 
 function descreverArea(): void {
   const a = AREAS[campo<HTMLSelectElement>('area-ativa').value as AreaId];
-  campo<HTMLElement>('area-descricao').textContent = a ? `${a.publico}. ${a.receitas.length} receitas, ${a.ferramentas.length} consultas.` : '';
+  campo<HTMLElement>('area-descricao').textContent = a ? `${a.publico}. ${a.receitas.length} funcionalidades, ${a.ferramentas.length} consultas.` : '';
 }
 
 function pintarReceitas(): void {
@@ -56,7 +56,7 @@ function pintarReceitas(): void {
   lista.textContent = '';
   if (receitas.length === 0) {
     const li = document.createElement('li');
-    li.textContent = 'Nenhuma receita própria ainda.';
+    li.textContent = 'Nenhuma funcionalidade própria ainda.';
     lista.append(li);
     return;
   }
@@ -123,6 +123,7 @@ async function carregar(): Promise<void> {
   for (const p of PROVEDORES) popularModelos(p, config.modelos[p]);
   campo<HTMLInputElement>('temperatura').value = String(config.temperatura);
   campo<HTMLInputElement>('max-tokens').value = String(config.maxTokens);
+  campo<HTMLSelectElement>('esforco').value = config.esforcoRaciocinio;
   atualizarTetoTokens();
 
   const area = campo<HTMLSelectElement>('area-ativa');
@@ -161,7 +162,7 @@ async function carregar(): Promise<void> {
 
 async function salvar(): Promise<void> {
   try {
-    const parcial: Partial<ConfigNexia> = {
+    const parcial: Partial<ConfigNexpra> = {
       provedorAtivo: campo<HTMLSelectElement>('provedor').value as ProvedorId,
       modelos: {
         gemini: campo<HTMLSelectElement>('modelo-gemini').value,
@@ -169,7 +170,8 @@ async function salvar(): Promise<void> {
         openai: campo<HTMLSelectElement>('modelo-openai').value
       },
       temperatura: Math.min(1, Math.max(0, Number(campo<HTMLInputElement>('temperatura').value) || 0.3)),
-      maxTokens: Math.max(1024, Number(campo<HTMLInputElement>('max-tokens').value) || 8192),
+      maxTokens: Math.max(1024, Number(campo<HTMLInputElement>('max-tokens').value) || 16000),
+      esforcoRaciocinio: campo<HTMLSelectElement>('esforco').value as EsforcoRaciocinio,
       areaAtiva: campo<HTMLSelectElement>('area-ativa').value as AreaId,
       anonimizarPorPadrao: campo<HTMLInputElement>('anonimizar-padrao').checked,
       detectarNomes: campo<HTMLInputElement>('detectar-nomes').checked,
@@ -211,20 +213,20 @@ function ligarEventos(): void {
     const nome = campo<HTMLInputElement>('rc-nome').value.trim();
     const prompt = campo<HTMLTextAreaElement>('rc-prompt').value.trim();
     if (!nome || !prompt) {
-      statusTexto('st-salvo', 'Informe nome e prompt da receita.', true);
+      statusTexto('st-salvo', 'Informe o nome e a instrução da funcionalidade.', true);
       return;
     }
     receitas.push({
       id: crypto.randomUUID(),
       nome,
       area: campo<HTMLSelectElement>('rc-area').value as AreaId | 'todas',
-      descricao: campo<HTMLInputElement>('rc-descricao').value.trim() || 'Receita personalizada',
+      descricao: campo<HTMLInputElement>('rc-descricao').value.trim() || 'Funcionalidade personalizada',
       prompt,
       formato: campo<HTMLSelectElement>('rc-formato').value as 'markdown' | 'documento'
     });
     for (const id of ['rc-nome', 'rc-descricao', 'rc-prompt']) (campo<HTMLInputElement>(id)).value = '';
     pintarReceitas();
-    statusTexto('st-salvo', 'Receita adicionada — clique em Salvar para gravar.');
+    statusTexto('st-salvo', 'Funcionalidade adicionada — clique em Salvar para gravar.');
   });
 
   campo<HTMLButtonElement>('btn-pasta').addEventListener('click', () =>
@@ -251,7 +253,7 @@ function ligarEventos(): void {
   );
   campo<HTMLButtonElement>('btn-limpar').addEventListener('click', () =>
     void (async () => {
-      if (!confirm('Apagar TODAS as configurações, chaves de API e o índice de modelos do NexIA?')) return;
+      if (!confirm('Apagar TODAS as configurações, chaves de API e o índice de modelos do Nexpra?')) return;
       await enviar('DADOS_LIMPAR');
       location.reload();
     })()

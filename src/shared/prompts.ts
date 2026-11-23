@@ -1,7 +1,7 @@
 import { LIMITES } from './constantes';
 import type { DossieProcesso, MensagemLLM, NaturezaMinuta, ParteImagem, ParteTexto, RequisicaoLLM } from './tipos';
 
-export const SYSTEM_PROMPT = `Você é o NexIA, assistente de inteligência artificial para sistemas processuais do Poder Judiciário brasileiro.
+export const SYSTEM_PROMPT = `Você é o Nexpra, assistente de inteligência artificial para sistemas processuais do Poder Judiciário brasileiro.
 
 Regras permanentes:
 - Responda sempre em português do Brasil, com linguagem jurídica formal, precisa e objetiva.

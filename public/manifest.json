@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "NexIA",
-  "version": "0.2.0",
-  "description": "IA com proteção de dados para profissionais: anonimização local, receitas por área, consultas a fontes públicas e conector PJe.",
+  "name": "Nexpra",
+  "version": "0.3.0",
+  "description": "IA com proteção de dados para profissionais: anonimização local, funcionalidades por área, fontes públicas e conectores jurídicos.",
   "minimum_chrome_version": "116",
   "icons": {
     "16": "public/icons/nexia-16.png",
@@ -11,7 +11,7 @@
     "128": "public/icons/nexia-128.png"
   },
   "action": {
-    "default_title": "Abrir o NexIA",
+    "default_title": "Abrir o Nexpra",
     "default_icon": {
       "16": "public/icons/nexia-16.png",
       "32": "public/icons/nexia-32.png"
@@ -46,7 +46,18 @@
     "https://clinicaltables.nlm.nih.gov/*",
     "https://api.crossref.org/*",
     "https://geocoding-api.open-meteo.com/*",
-    "https://archive-api.open-meteo.com/*"
+    "https://archive-api.open-meteo.com/*",
+    "https://legis.senado.leg.br/*",
+    "https://normas.leg.br/*",
+    "https://certidoes-apf.apps.tcu.gov.br/*",
+    "https://pncp.gov.br/*",
+    "https://api.queridodiario.org.br/*",
+    "https://consumo.tributos.gov.br/*",
+    "https://parallelum.com.br/*",
+    "https://www.ebi.ac.uk/*",
+    "https://clinicaltrials.gov/*",
+    "https://info.dengue.mat.br/*",
+    "https://api.bncc.dev/*"
   ],
   "optional_host_permissions": ["https://*/*", "http://*/*"],
   "content_scripts": [

@@ -3,9 +3,12 @@ import type { MensagemLLM, ParteChamada, ParteConteudo, RequisicaoLLM } from '@s
 import { extrairErroHttp, type FerramentaLLM, type OpcoesGeracao, type ProvedorLLM } from './provedor';
 import { lerSse } from './sse';
 
-/** Modelos de raciocínio (GPT-5, o1/o3/o4…) só aceitam a temperatura padrão. */
+/**
+ * Modelos de raciocínio (GPT-5 em diante, GPT-6, o1/o3/o4…) só aceitam a temperatura
+ * padrão: não enviamos o parâmetro a eles.
+ */
 function aceitaTemperatura(modelo: string): boolean {
-  return !/^(gpt-5|o\d)/i.test(modelo);
+  return !/^(gpt-([5-9]|\d{2,})|o\d)/i.test(modelo);
 }
 
 function partesComuns(partes: ParteConteudo[]): unknown[] {
@@ -100,19 +103,49 @@ export const provedorOpenai: ProvedorLLM = {
     return corpo.choices?.[0]?.message?.content ?? '';
   },
 
-  async gerarComFerramentas(req, opcoes, ferramentas) {
-    const resposta = await requisitar(montarCorpo(req, opcoes.modelo, false, ferramentas), opcoes);
-    const corpo = (await resposta.json()) as { choices?: Array<{ message?: MensagemOpenai }> };
-    const msg = corpo.choices?.[0]?.message;
-    const chamadas: ParteChamada[] = (msg?.tool_calls ?? []).map((tc) => {
-      let args: Record<string, unknown> = {};
+  async gerarComFerramentas(req, opcoes, ferramentas, aoTrecho) {
+    const resposta = await requisitar(montarCorpo(req, opcoes.modelo, true, ferramentas), opcoes);
+    let texto = '';
+    // As chamadas de ferramenta chegam fatiadas por índice: id e nome primeiro, argumentos aos pedaços.
+    const parciais = new Map<number, { id: string; nome: string; args: string }>();
+    await lerSse(resposta, (dado) => {
+      if (!dado || dado === '[DONE]') return;
+      let evento: {
+        choices?: Array<{
+          delta?: { content?: string; tool_calls?: Array<{ index?: number; id?: string; function?: { name?: string; arguments?: string } }> };
+        }>;
+      };
       try {
-        args = JSON.parse(tc.function?.arguments || '{}') as Record<string, unknown>;
+        evento = JSON.parse(dado);
       } catch {
-        /* argumentos malformados → objeto vazio; o executor reporta o erro */
+        return;
       }
-      return { tipo: 'chamada', id: tc.id, nome: tc.function?.name ?? '', args };
+      const delta = evento.choices?.[0]?.delta;
+      if (delta?.content) {
+        texto += delta.content;
+        aoTrecho?.(delta.content);
+      }
+      for (const tc of delta?.tool_calls ?? []) {
+        const i = tc.index ?? 0;
+        const p = parciais.get(i) ?? { id: '', nome: '', args: '' };
+        if (tc.id) p.id = tc.id;
+        if (tc.function?.name) p.nome += tc.function.name;
+        if (tc.function?.arguments) p.args += tc.function.arguments;
+        parciais.set(i, p);
+      }
     });
-    return { texto: msg?.content ?? '', chamadas };
+    const chamadas: ParteChamada[] = [...parciais.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .filter(([, p]) => p.id && p.nome)
+      .map(([, p]) => {
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(p.args || '{}') as Record<string, unknown>;
+        } catch {
+          /* argumentos malformados → objeto vazio; o executor reporta o erro */
+        }
+        return { tipo: 'chamada', id: p.id, nome: p.nome, args };
+      });
+    return { texto, chamadas };
   }
 };

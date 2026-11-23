@@ -22,7 +22,7 @@ export function redigir(valor: unknown): string {
 }
 
 export const log = {
-  info: (...args: unknown[]) => console.info('[NexIA]', ...args.map(redigir)),
-  aviso: (...args: unknown[]) => console.warn('[NexIA]', ...args.map(redigir)),
-  erro: (...args: unknown[]) => console.error('[NexIA]', ...args.map(redigir))
+  info: (...args: unknown[]) => console.info('[Nexpra]', ...args.map(redigir)),
+  aviso: (...args: unknown[]) => console.warn('[Nexpra]', ...args.map(redigir)),
+  erro: (...args: unknown[]) => console.error('[Nexpra]', ...args.map(redigir))
 };

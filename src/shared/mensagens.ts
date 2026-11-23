@@ -1,5 +1,5 @@
 import type { AchadoGuarda } from './anonimizador/guarda';
-import type { ConfigNexia, DossieProcesso, ProvedorId, RequisicaoLLM, ResultadoBuscaModelo, SnapshotAuth } from './tipos';
+import type { ConfigNexpra, DossieProcesso, ProvedorId, RequisicaoLLM, ResultadoBuscaModelo, SnapshotAuth } from './tipos';
 
 /** Canais de mensagem (content/painel/opções ↔ background). */
 export type Canal =
@@ -25,7 +25,7 @@ export interface Pedido {
 
 export interface RespostaErro { erro: string }
 
-export interface DadosConfigSalvar { config: Partial<ConfigNexia> }
+export interface DadosConfigSalvar { config: Partial<ConfigNexpra> }
 export interface DadosAuthCapturada { host: string; snapshot: SnapshotAuth }
 export interface DadosAuthObter { host: string }
 export interface DadosChaveSalvar { provedor: ProvedorId; chave: string }
@@ -33,7 +33,8 @@ export interface DadosLlmGerar { requisicao: RequisicaoLLM }
 export interface DadosModelosBuscar { consulta: string; natureza?: string; limite?: number }
 /** Uma página (imagem dataURL) para OCR local no offscreen. Nunca logar a imagem (LGPD). */
 export interface DadosOcrPagina { imagem: string }
-export interface DadosFerramentaExecutar { nome: string; args: Record<string, unknown> }
+/** `prazoMs`: tempo máximo total da consulta (a IA usa um prazo menor que a consulta manual). */
+export interface DadosFerramentaExecutar { nome: string; args: Record<string, unknown>; prazoMs?: number }
 
 /** `falha` em vez de `erro` para o helper `enviar` não lançar e o lote seguir. */
 export interface RespostaOcrPagina { texto: string; backend?: string; ms?: number; falha?: string }
@@ -43,7 +44,7 @@ export interface RespostaChaveStatus { status: Record<ProvedorId, boolean> }
 export interface RespostaAuthListar { hosts: Array<{ host: string; capturadoEm: number }> }
 export interface RespostaModelosStatus { quantidade: number; atualizadoEm: number | null; nomePasta: string | null }
 export interface RespostaModelosBuscar { resultados: ResultadoBuscaModelo[] }
-export interface RespostaConfig { config: ConfigNexia }
+export interface RespostaConfig { config: ConfigNexpra }
 
 /** Envia um pedido tipado ao background. Lança Error se o background responder { erro }. */
 export async function enviar<TResp>(canal: Canal, dados?: unknown): Promise<TResp> {
@@ -67,7 +68,9 @@ export type MensagemPortaSaida =
   /** Achados da guarda de saída (modo "confirmar"): o cliente pergunta ao usuário. */
   | { tipo: 'guarda'; achados: AchadoGuarda[] }
   /** O modelo pediu uma ferramenta: o cliente resolve marcadores localmente, executa e devolve. */
-  | { tipo: 'ferramenta'; id: string; nome: string; args: Record<string, unknown> };
+  | { tipo: 'ferramenta'; id: string; nome: string; args: Record<string, unknown> }
+  /** Sinal de vida durante esperas longas (mantém o service worker ativo e informa o painel). */
+  | { tipo: 'pulso'; segundos: number };
 
 /** Porta painel → content script do PJe (coleta de processo). */
 export type MensagemPjeEntrada = { tipo: 'coletar' };

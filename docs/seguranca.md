@@ -2,7 +2,7 @@
 
 ## Princípios
 
-1. **Nada passa por servidor do NexIA.** Não existe backend: documentos, conversas, mapa de pseudônimos e chaves ficam no navegador do usuário.
+1. **Nada passa por servidor do Nexpra.** Não existe backend: documentos, conversas, mapa de pseudônimos e chaves ficam no navegador do usuário.
 2. **Pseudonimização local e determinística, sem IA.** Nenhum trecho é enviado a modelo para "descobrir" dados pessoais (requisito das normas do CNJ sobre IA no Judiciário e boa prática LGPD em qualquer área).
 3. **Defesa em profundidade.** Proteção na UI + guarda de saída no service worker + transparência em cada consulta externa.
 4. **O usuário vê e decide.** Revisão entidade a entidade, prévia "como a IA vai ler", "ver como a IA viu" em cada resposta.
@@ -36,5 +36,5 @@
 ## Permissões
 
 - `host_permissions`: `*.jus.br` (conector PJe), provedores de IA e as APIs públicas curadas.
-- `optional_host_permissions` (`https://*/*`): pedida **site a site**, só quando o usuário clica em "Página atual".
+- `optional_host_permissions` (`https://*/*`, `http://*/*`): pedida **uma única vez e só se o usuário autorizar**, ao usar "Página atual" (sem ela o Chrome nem revela a URL da aba, então não há como pedir por site). A leitura só acontece no clique; o menu de contexto (activeTab) funciona sem essa permissão.
 - `activeTab` + `scripting`: leitura da seleção/página via menu de contexto, por gesto do usuário.

@@ -1,15 +1,27 @@
-# NexIA multiárea — visão, decisões e roadmap
+# Nexpra multiárea — visão, decisões e roadmap
 
-> Versão 0.2.0 (22/11/2026). O NexIA deixa de ser um assistente só do PJe e passa a ser
+> Versão 0.2.0 (22/11/2026). O produto deixa de ser um assistente só do PJe e passa a ser
 > **uma camada de IA com proteção de dados para qualquer profissional** — advocacia,
 > contabilidade, saúde, engenharia/arquitetura, RH/DP e uso geral — mantendo o PJe como
 > um conector especializado.
 
+## Nome: de NexIA para Nexpra (22/11/2026)
+
+O nome original, NexIA, foi abandonado antes da primeira publicação: `nexia.com.br` e
+`nexia.ia.br` estavam ocupados e "Nexia" é marca de uma rede internacional de auditoria e
+contabilidade com presença no Brasil — justamente um dos públicos do produto.
+
+**Nexpra** ("Nex" + "prá-tico") manteve a continuidade com o nome anterior, carrega a ideia
+de praticidade e agilidade e tinha `nexpra.com.br`, `nexpra.ai` e `nexpra.ia.br` livres na
+data da escolha. Pendências: registrar os domínios e buscar "NEXPRA" e "NEXPRO" no INPI
+(classes 9 e 42) — Nexpro existe como domínio desde 2020. A logo (N com ponto) e a identidade
+P&B foram mantidas; o ponto passa a representar o "ponto de ação": a IA levada à prática.
+
 ## A proposta de valor, em uma frase
 
-**Use qualquer IA com documentos sensíveis sem expor dados pessoais**: o NexIA extrai o
+**Use qualquer IA com documentos sensíveis sem expor dados pessoais**: o Nexpra extrai o
 conteúdo (inclusive de digitalizados, com OCR local), pseudonimiza localmente, entrega à IA
-com receitas da sua área e com acesso a fontes públicas oficiais, e devolve a resposta com os
+com funcionalidades da sua área e com acesso a fontes públicas oficiais, e devolve a resposta com os
 dados reais só na sua tela.
 
 ## O que existe na 0.2.0
@@ -17,7 +29,7 @@ dados reais só na sua tela.
 | Pilar | O que faz | Onde |
 |---|---|---|
 | **Painel lateral** | Espaço de trabalho em qualquer site: Fontes → Assistente → Proteção → Consultas. Abre pelo ícone, pelo menu de contexto ("levar seleção/página para o painel") ou pelo botão no PJe. | `src/sidepanel/` |
-| **Áreas profissionais** | 6 perfis com persona, aviso de responsabilidade, detectores padrão, consultas e 6–8 receitas cada (≈ 40 receitas). Receitas próprias nas opções. | `src/shared/areas/` |
+| **Áreas profissionais** | 6 perfis com persona, aviso de responsabilidade, detectores padrão, consultas e 6–8 funcionalidades cada (≈ 40 no total). Funcionalidades próprias nas opções. (No código, o tipo interno continua se chamando `Receita`.) | `src/shared/areas/` |
 | **Anonimizador universal** | 25 tipos de dado (CPF/CNPJ inclusive alfanumérico, CNS, PIS, título, CNJ, NF-e, placas, endereços, registros profissionais, prontuário…), com validação de dígito verificador; nomes por dicionário + âncoras ("Sr.", "paciente", "filho de") — **sem IA**. Pseudônimos estáveis e reversíveis; revisão entidade a entidade; termos "sempre/nunca mascarar"; prévia destacada; TXT protegido + relatório. Funciona **sem chave de IA**. | `src/shared/anonimizador/`, aba Proteção |
 | **Guarda de saída** | Última barreira no service worker: CPF/CNS/cartão (com DV) no que vai sair → bloqueia ou pede confirmação. Independe da UI. | `background/index.ts`, `anonimizador/guarda.ts` |
 | **Consultas (APIs públicas)** | 18 ferramentas usáveis manualmente e pela IA (function calling nos 3 provedores). Marcadores como `[CNPJ_1]` são resolvidos **localmente** só para a consulta; o retorno é pseudonimizado de novo antes de voltar à IA. Cada consulta mostra o que saiu do navegador. | `src/shared/ferramentas/`, `background/ferramentas/` |
@@ -57,14 +69,14 @@ inglês, Nager.Date/Calendarific (BrasilAPI já cobre feriados nacionais), servi
 receberiam dados de clientes (agendamento, geocodificação de endereço de pessoa).
 
 **Atenção comercial:** o plano gratuito do Open-Meteo é para uso não comercial. Para vender o
-NexIA com essa consulta ativa, contrate o plano comercial do Open-Meteo ou use os dados do
+Nexpra com essa consulta ativa, contrate o plano comercial do Open-Meteo ou use os dados do
 INMET (BDMEP) — ver roadmap.
 
 ## Extensão pura ou backend (Cloudflare D1/R2)?
 
 **Decisão: continuar 100% extensão nesta fase.** O principal diferencial do produto é que
-nada passa por servidor do NexIA — nem documentos, nem o mapa de pseudônimos, nem as chaves.
-Um backend agora acrescentaria custo, superfície de ataque e obrigações de LGPD (o NexIA
+nada passa por servidor do Nexpra — nem documentos, nem o mapa de pseudônimos, nem as chaves.
+Um backend agora acrescentaria custo, superfície de ataque e obrigações de LGPD (o Nexpra
 passaria a ser operador) sem destravar nenhuma funcionalidade da 0.2.0: as APIs públicas são
 chamadas direto do service worker (sem problema de CORS), o OCR é local e a IA é chamada com
 a chave do próprio usuário.
@@ -74,7 +86,7 @@ a chave do próprio usuário.
 | Gatilho | Serviço | Dados que trafegariam |
 |---|---|---|
 | Vender licenças/assinaturas e controlar ativação | Worker + D1 (contas, licenças, assentos) | e-mail e status da licença — nada de conteúdo |
-| Biblioteca de receitas e modelos **da equipe/escritório** | D1 (metadados, versões) + R2 (arquivos de modelo) | modelos do escritório, idealmente já sem dados pessoais |
+| Biblioteca de funcionalidades e modelos **da equipe/escritório** | D1 (metadados, versões) + R2 (arquivos de modelo) | modelos do escritório, idealmente já sem dados pessoais |
 | Oferecer IA "sem chave" (créditos pré-pagos) | Worker como proxy de LLM + D1 (uso/saldo) | **texto já pseudonimizado** (a anonimização continua no cliente) |
 | Tabelas grandes de referência (CID-10 PT completa, CBO, SINAPI, TUSS) | R2 servindo arquivos estáticos versionados, cacheados localmente | nenhum dado do usuário |
 
@@ -93,7 +105,7 @@ permanecem sempre no cliente.** O servidor só vê texto protegido ou metadados.
 
 **Médio prazo**
 - Conectores de outros sistemas (eproc, SEI, sistemas de prontuário/ERP via página atual com extratores dedicados).
-- Receitas compartilháveis por arquivo (importar/exportar JSON) — semente da biblioteca de equipe.
+- Funcionalidades compartilháveis por arquivo (importar/exportar JSON) — semente da biblioteca de equipe.
 - Detector de nomes com dicionário de sobrenomes + lista de entidades públicas por UF.
 - Modo "copiar para qualquer IA": prompt pronto + texto protegido, para quem usa ChatGPT/Gemini web.
 

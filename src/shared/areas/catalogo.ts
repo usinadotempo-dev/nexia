@@ -1,16 +1,11 @@
 /**
- * Catálogo de áreas profissionais do NexIA. Cada área define a persona do
+ * Catálogo de áreas profissionais do Nexpra. Cada área define a persona do
  * assistente, os detectores de anonimização ligados por padrão, as ferramentas
  * (APIs públicas e cálculos) que a IA pode usar e as receitas (prompts prontos).
  * Nada aqui é específico de uma instituição.
  */
-import type { TipoEntidade } from '../anonimizador/detectores.ts';
-import type { Area, AreaId, Receita, ReceitaPersonalizada } from './tipos.ts';
-
-const BASE_PII: TipoEntidade[] = [
-  'PESSOA', 'CPF', 'RG', 'CNH', 'PIS', 'CNS', 'TITULO_ELEITOR', 'PASSAPORTE', 'CEP', 'ENDERECO', 'TELEFONE', 'EMAIL',
-  'CARTAO', 'CONTA_BANCARIA', 'PIX', 'DATA_NASCIMENTO', 'RENAVAM', 'PLACA', 'IP', 'PERSONALIZADO'
-];
+import { CARTORIOS, CONTRATACOES, EDUCACAO, FINANCEIRO, IMOBILIARIO, PSICOLOGIA, SEGUROS, SOCIAL } from './novas-areas.ts';
+import { BASE_PII, type Area, type AreaId, type Receita, type ReceitaPersonalizada } from './tipos.ts';
 
 const RESPOSTA_ESTRUTURADA = 'Use títulos curtos, listas e tabelas quando ajudarem a leitura.';
 
@@ -24,10 +19,15 @@ const JURIDICO: Area = {
   persona: `Atue como assistente jurídico sênior no Brasil, para advogados, departamentos jurídicos e servidores do Judiciário.
 - Linguagem técnico-jurídica, precisa e objetiva.
 - Cite dispositivos legais apenas quando tiver segurança; nunca invente número de julgado, súmula, tema ou ementa — se não tiver certeza, indique "verificar jurisprudência atualizada".
-- Prazos processuais e correção monetária devem ser calculados com as ferramentas disponíveis, nunca de cabeça.`,
+- Prazos processuais e correção monetária devem ser calculados com as ferramentas disponíveis, nunca de cabeça.
+- Se os autos já estão nas fontes, trabalhe com eles; consulte o DataJud apenas quando faltar o processo ou o usuário pedir o andamento atualizado.`,
   aviso: 'Conteúdo de apoio. A responsabilidade técnica pela peça ou decisão é do profissional.',
   detectoresPadrao: [...BASE_PII, 'OAB', 'REGISTRO_PROFISSIONAL', 'PROCESSO', 'CNPJ', 'PRONTUARIO'],
-  ferramentas: ['consultar_processo_datajud', 'calcular_prazo', 'corrigir_valor', 'feriados_nacionais', 'buscar_proposicoes', 'consultar_sancoes', 'consultar_cnpj', 'consultar_cep', 'taxas_atuais', 'clima_historico', 'verificar_referencia'],
+  ferramentas: [
+    'consultar_lei_federal', 'consultar_processo_datajud', 'calcular_prazo', 'corrigir_valor', 'feriados_nacionais', 'buscar_proposicoes',
+    'certidao_tcu', 'consultar_sancoes', 'buscar_licitacoes', 'buscar_diarios_municipais', 'taxas_juros_credito', 'consultar_cnpj',
+    'consultar_cep', 'taxas_atuais', 'clima_historico', 'verificar_referencia'
+  ],
   receitas: [
     {
       id: 'resumo-caso',
@@ -137,7 +137,11 @@ const CONTABIL: Area = {
 - Dados cadastrais de empresas: use a consulta de CNPJ/CNAE quando útil.`,
   aviso: 'Apoio técnico. Confirme alíquotas, prazos e enquadramentos na legislação vigente.',
   detectoresPadrao: [...BASE_PII, 'CNPJ', 'REGISTRO_PROFISSIONAL'],
-  ferramentas: ['consultar_cnpj', 'consultar_sancoes', 'consultar_cnae', 'consultar_ncm', 'codigo_municipio_ibge', 'corrigir_valor', 'cotacao_moeda', 'taxas_atuais', 'calcular_prazo', 'feriados_nacionais', 'buscar_proposicoes', 'consultar_cep'],
+  ferramentas: [
+    'consultar_cnpj', 'certidao_tcu', 'consultar_sancoes', 'consultar_cnae', 'consultar_ncm', 'reforma_tributaria_ncm', 'codigo_municipio_ibge',
+    'corrigir_valor', 'cotacao_moeda', 'taxas_atuais', 'expectativas_mercado', 'taxas_juros_credito', 'consultar_lei_federal', 'calcular_prazo',
+    'feriados_nacionais', 'buscar_proposicoes', 'consultar_fipe', 'consultar_cep'
+  ],
   receitas: [
     {
       id: 'analise-demonstracoes',
@@ -223,7 +227,10 @@ const SAUDE: Area = {
 - Respeite o sigilo: os dados do paciente podem estar pseudonimizados ([PESSOA_1] etc.).`,
   aviso: 'Apoio à decisão. Não substitui avaliação clínica nem as normas do conselho profissional.',
   detectoresPadrao: [...BASE_PII, 'PRONTUARIO', 'REGISTRO_PROFISSIONAL', 'CNPJ'],
-  ferramentas: ['buscar_pubmed', 'consultar_bula', 'buscar_cid', 'verificar_referencia', 'consultar_cep', 'consultar_cnpj'],
+  ferramentas: [
+    'buscar_pubmed', 'buscar_artigos_europepmc', 'buscar_ensaios_clinicos', 'consultar_bula', 'eventos_adversos_fda', 'buscar_cid',
+    'alerta_arboviroses', 'verificar_referencia', 'consultar_cep', 'consultar_cnpj'
+  ],
   receitas: [
     {
       id: 'soap',
@@ -264,6 +271,20 @@ const SAUDE: Area = {
       campos: [{ id: 'medicamentos', rotulo: 'Medicamentos e doses', tipo: 'texto-longo' }]
     },
     {
+      id: 'farmacoterapia',
+      nome: 'Revisão da farmacoterapia',
+      descricao: 'Farmácia clínica: problemas relacionados a medicamentos e plano de cuidado',
+      exigeFontes: true,
+      prompt: 'Faça a revisão da farmacoterapia a partir das fontes (prescrição, exames, anotações): para cada medicamento, indicação, dose e posologia, adesão e problemas relacionados (necessidade, efetividade, segurança), interações relevantes e duplicidades. Conclua com intervenções farmacêuticas sugeridas, o que monitorar e orientações ao paciente. Use a consulta de bula e de eventos adversos quando útil e recomende conferência em fonte oficial.'
+    },
+    {
+      id: 'avaliacao-nutricional',
+      nome: 'Avaliação e plano alimentar',
+      descricao: 'Nutrição: síntese da avaliação e estrutura de plano alimentar',
+      prompt: 'Com base nas fontes e nos dados informados ({{dados}}), elabore: síntese da avaliação nutricional (antropometria, exames, hábitos, objetivos), diagnóstico nutricional, metas, estrutura de plano alimentar por refeição com substituições e orientações práticas. Indique os cálculos e as premissas usados e o que deve ser ajustado pelo nutricionista.',
+      campos: [{ id: 'dados', rotulo: 'Dados do paciente (sem identificação)', tipo: 'texto-longo', placeholder: 'idade, peso, altura, objetivo, restrições…' }]
+    },
+    {
       id: 'encaminhamento',
       nome: 'Encaminhamento',
       descricao: 'Carta de encaminhamento ou contrarreferência',
@@ -285,7 +306,10 @@ const ENGENHARIA: Area = {
 - Reajustes por índices (INCC, IPCA): use a ferramenta corrigir_valor.`,
   aviso: 'Apoio técnico. Não substitui projeto, laudo ou responsabilidade técnica (ART/RRT).',
   detectoresPadrao: [...BASE_PII, 'REGISTRO_PROFISSIONAL'],
-  ferramentas: ['corrigir_valor', 'clima_historico', 'consultar_cep', 'consultar_cnpj', 'consultar_sancoes', 'codigo_municipio_ibge', 'feriados_nacionais', 'calcular_prazo', 'taxas_atuais', 'verificar_referencia'],
+  ferramentas: [
+    'custo_construcao_sinapi', 'corrigir_valor', 'clima_historico', 'consultar_lei_federal', 'buscar_licitacoes', 'certidao_tcu', 'consultar_cep',
+    'consultar_cnpj', 'consultar_sancoes', 'codigo_municipio_ibge', 'feriados_nacionais', 'calcular_prazo', 'taxas_atuais', 'verificar_referencia'
+  ],
   receitas: [
     {
       id: 'laudo-vistoria',
@@ -353,7 +377,7 @@ const RH: Area = {
 - Trate dados de empregados com sigilo (podem estar pseudonimizados).`,
   aviso: 'Apoio técnico. Confira a convenção coletiva e a legislação vigente.',
   detectoresPadrao: [...BASE_PII],
-  ferramentas: ['calcular_prazo', 'feriados_nacionais', 'corrigir_valor', 'consultar_cep', 'consultar_cnpj', 'consultar_cnae'],
+  ferramentas: ['consultar_lei_federal', 'calcular_prazo', 'feriados_nacionais', 'corrigir_valor', 'consultar_cep', 'consultar_cnpj', 'consultar_cnae'],
   receitas: [
     {
       id: 'rescisao',
@@ -415,7 +439,10 @@ const GERAL: Area = {
   sigla: 'GER',
   persona: 'Atue como assistente profissional versátil, preciso e objetivo.',
   detectoresPadrao: [...BASE_PII, 'CNPJ', 'PROCESSO', 'OAB', 'REGISTRO_PROFISSIONAL', 'PRONTUARIO'],
-  ferramentas: ['consultar_cep', 'consultar_cnpj', 'feriados_nacionais', 'taxas_atuais', 'cotacao_moeda', 'corrigir_valor', 'calcular_prazo', 'clima_historico', 'verificar_referencia', 'buscar_proposicoes'],
+  ferramentas: [
+    'consultar_cep', 'consultar_cnpj', 'consultar_lei_federal', 'feriados_nacionais', 'taxas_atuais', 'expectativas_mercado', 'cotacao_moeda',
+    'corrigir_valor', 'calcular_prazo', 'consultar_fipe', 'clima_historico', 'verificar_referencia', 'buscar_proposicoes'
+  ],
   receitas: [
     {
       id: 'resumo-executivo',
@@ -480,12 +507,23 @@ export const AREAS: Record<AreaId, Area> = {
   juridico: JURIDICO,
   contabil: CONTABIL,
   saude: SAUDE,
+  psicologia: PSICOLOGIA,
   engenharia: ENGENHARIA,
+  imobiliario: IMOBILIARIO,
+  seguros: SEGUROS,
+  financeiro: FINANCEIRO,
+  educacao: EDUCACAO,
+  contratacoes: CONTRATACOES,
+  social: SOCIAL,
+  cartorios: CARTORIOS,
   rh: RH,
   geral: GERAL
 };
 
-export const ORDEM_AREAS: AreaId[] = ['juridico', 'contabil', 'saude', 'engenharia', 'rh', 'geral'];
+export const ORDEM_AREAS: AreaId[] = [
+  'juridico', 'contabil', 'saude', 'psicologia', 'engenharia', 'imobiliario', 'seguros', 'financeiro',
+  'educacao', 'contratacoes', 'social', 'cartorios', 'rh', 'geral'
+];
 
 export function obterArea(id: string | undefined): Area {
   return AREAS[(id as AreaId) ?? 'geral'] ?? GERAL;
@@ -514,7 +552,7 @@ export function hojeExtenso(): string {
 /** System prompt completo: regras comuns + persona da área. */
 export function montarSystemPrompt(area: Area, opcoes: { anonimizado: boolean; comFerramentas: boolean }): string {
   const regras = [
-    `Você é o NexIA, assistente de inteligência artificial para profissionais. Área ativa: ${area.nome} (${area.publico}). Hoje é ${hojeExtenso()}.`,
+    `Você é o Nexpra, assistente de inteligência artificial para profissionais. Área ativa: ${area.nome} (${area.publico}). Hoje é ${hojeExtenso()}.`,
     '',
     'Regras permanentes:',
     '- Responda em português do Brasil, salvo pedido diverso.',

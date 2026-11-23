@@ -4,7 +4,7 @@ import { crx } from '@crxjs/vite-plugin';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 import manifest from './public/manifest.json';
 
-// Build MV3 do app NexIA. O @crxjs lê o manifest e cuida do que é chato no MV3:
+// Build MV3 do app Nexpra. O @crxjs lê o manifest e cuida do que é chato no MV3:
 // content scripts como IIFE (não módulos), scripts world:MAIN, service worker módulo,
 // páginas (popup/options) e web_accessible_resources — reescrevendo os caminhos.
 //
@@ -14,8 +14,8 @@ import manifest from './public/manifest.json';
 // HTML; os demais binários (modelos, wasm, worker do pdf.js) vão via viteStaticCopy.
 // Build de loja por padrão (minificado, sem sourcemap — a Chrome Web Store aceita
 // minificação, não ofuscação). Para diagnosticar erros com nomes reais:
-//   set NEXIA_DEPURAR=1   e então   npm run build
-const depurar = process.env['NEXIA_DEPURAR'] === '1';
+//   set NEXPRA_DEPURAR=1   e então   npm run build
+const depurar = process.env['NEXPRA_DEPURAR'] === '1';
 
 export default defineConfig({
   publicDir: false,

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nexpra — IA com proteção de dados para profissionais</title>
+  <meta name="description" content="Extensão para o Chrome que mascara dados pessoais no seu computador antes de enviar documentos à IA. Funcionalidades prontas para 14 áreas e consultas a fontes públicas oficiais.">
+  <meta property="og:title" content="Nexpra — IA com proteção de dados para profissionais">
+  <meta property="og:description" content="Use IA com contratos, processos, prontuários e planilhas sem expor dados pessoais.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://nexpra.com.br/">
+  <link rel="canonical" href="https://nexpra.com.br/">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='4' width='120' height='120' rx='26' fill='%230a0a0a'/%3E%3Cpath d='M42 90 V40 L82 88 V60' stroke='%23fff' stroke-width='13' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='82' cy='38' r='8' fill='%23fff'/%3E%3C/svg%3E">
+  <style>
+    :root { --fundo: #fff; --superficie: #f7f7f7; --linha: #e4e4e4; --linha-forte: #c9c9c9; --texto: #0a0a0a; --texto-2: #4a4a4a; --texto-3: #6b6b6b; --inverso: #0a0a0a; --inverso-texto: #fff; color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      :root { --fundo: #0a0a0a; --superficie: #141414; --linha: #262626; --linha-forte: #3d3d3d; --texto: #f5f5f5; --texto-2: #c4c4c4; --texto-3: #9a9a9a; --inverso: #f5f5f5; --inverso-texto: #0a0a0a; color-scheme: dark; }
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--fundo); color: var(--texto); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; border-radius: 4px; }
+    .contido { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+    header.topo { position: sticky; top: 0; z-index: 10; background: var(--fundo); border-bottom: 1px solid var(--linha); }
+    .barra { display: flex; align-items: center; gap: 20px; height: 60px; }
+    .marca { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; text-decoration: none; }
+    .marca svg { width: 28px; height: 28px; }
+    nav { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
+    nav a { text-decoration: none; font-size: 14px; font-weight: 600; color: var(--texto-2); padding: 6px 10px; border-radius: 8px; }
+    nav a:hover { color: var(--texto); background: var(--superficie); }
+    .botao { display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 22px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid var(--linha-forte); }
+    .botao.primario { background: var(--inverso); color: var(--inverso-texto); border-color: var(--inverso); }
+    .botao:hover { border-color: var(--texto); }
+    .botao.primario:hover { opacity: 0.88; }
+    .heroi { padding: 72px 0 56px; }
+    .selo { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--linha-forte); border-radius: 999px; padding: 4px 12px; color: var(--texto-2); margin-bottom: 20px; }
+    h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.06; letter-spacing: -0.03em; max-width: 15ch; }
+    .sub { font-size: clamp(17px, 2.2vw, 20px); color: var(--texto-2); max-width: 60ch; margin: 20px 0 28px; }
+    .acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .nota { font-size: 13px; color: var(--texto-3); margin-top: 14px; }
+    .demo { margin-top: 48px; border: 1px solid var(--linha); border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; }
+    .demo > div { padding: 20px; font: 13.5px/1.7 ui-monospace, "Cascadia Mono", Consolas, monospace; }
+    .demo > div + div { border-left: 1px solid var(--linha); background: var(--superficie); }
+    .demo small { display: block; font: 700 11px/1 system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-3); margin-bottom: 12px; }
+    .demo mark { background: var(--inverso); color: var(--inverso-texto); padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
+    section { padding: 64px 0; border-top: 1px solid var(--linha); }
+    h2 { font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.02em; line-height: 1.15; max-width: 22ch; }
+    .lead { color: var(--texto-2); max-width: 62ch; margin-top: 12px; }
+    .grade { display: grid; gap: 16px; margin-top: 32px; }
+    .g3 { grid-template-columns: repeat(3, 1fr); }
+    .g2 { grid-template-columns: repeat(2, 1fr); }
+    .cartao { border: 1px solid var(--linha); border-radius: 12px; padding: 22px; }
+    .cartao h3 { font-size: 17px; margin-bottom: 6px; letter-spacing: -0.01em; }
+    .cartao p, .cartao li { color: var(--texto-2); font-size: 15px; }
+    .numero { font: 700 13px/1 ui-monospace, Consolas, monospace; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--inverso); color: var(--inverso-texto); margin-bottom: 14px; }
+    .areas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+    .areas span { border: 1px solid var(--linha-forte); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 600; }
+    ul.lista { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    ul.lista li { padding-left: 22px; position: relative; }
+    ul.lista li::before { content: ""; position: absolute; left: 2px; top: 0.62em; width: 8px; height: 8px; border-radius: 50%; background: var(--texto); }
+    details { border-bottom: 1px solid var(--linha); padding: 16px 0; }
+    details summary { cursor: pointer; font-weight: 600; font-size: 16px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+    details summary::after { content: "+"; font-weight: 400; font-size: 20px; line-height: 1; }
+    details[open] summary::after { content: "–"; }
+    details summary::-webkit-details-marker { display: none; }
+    details p { color: var(--texto-2); margin-top: 10px; max-width: 70ch; }
+    .faixa { background: var(--inverso); color: var(--inverso-texto); border-top: 0; }
+    .faixa h2 { max-width: 24ch; }
+    .faixa .lead { color: inherit; opacity: 0.75; }
+    .faixa .botao { background: var(--inverso-texto); color: var(--inverso); border-color: var(--inverso-texto); margin-top: 24px; }
+    footer { border-top: 1px solid var(--linha); padding: 28px 0 40px; color: var(--texto-3); font-size: 14px; }
+    footer .contido { display: flex; gap: 16px 28px; flex-wrap: wrap; align-items: center; }
+    footer a { text-decoration: underline; text-underline-offset: 3px; }
+    @media (max-width: 760px) {
+      .g3, .g2, .demo { grid-template-columns: 1fr; }
+      .demo > div + div { border-left: 0; border-top: 1px solid var(--linha); }
+      nav a.opcional { display: none; }
+      .heroi { padding: 48px 0 40px; }
+      section { padding: 48px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <header class="topo">
+    <div class="contido barra">
+      <a class="marca" href="/" aria-label="Nexpra, página inicial">
+        <svg viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="currentColor"/><path d="M42 90 V40 L82 88 V60" stroke="var(--fundo)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="var(--fundo)"/></svg>
+        Nexpra
+      </a>
+      <nav aria-label="Seções">
+        <a class="opcional" href="#como-funciona">Como funciona</a>
+        <a class="opcional" href="#areas">Áreas</a>
+        <a class="opcional" href="#consultas">Consultas</a>
+        <a href="#privacidade">Privacidade</a>
+        <a href="#duvidas">Dúvidas</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <div class="contido heroi">
+      <span class="selo">Extensão para o Google Chrome</span>
+      <h1>Use IA no trabalho sem expor os dados de ninguém.</h1>
+      <p class="sub">O Nexpra mascara nomes, CPF, endereços e outros dados pessoais <strong>no seu computador</strong>, antes de o documento chegar à inteligência artificial. A resposta volta com os dados reais só na sua tela.</p>
+      <div class="acoes">
+        <!-- Quando a extensão for publicada, troque o href pelo link da Chrome Web Store e o texto por "Instalar no Chrome". -->
+        <a class="botao primario" id="instalar" href="mailto:contato@nexpra.com.br?subject=Quero%20testar%20o%20Nexpra">Pedir acesso antecipado</a>
+        <a class="botao" href="#como-funciona">Ver como funciona</a>
+      </div>
+      <p class="nota">Em breve na Chrome Web Store. Funciona com a sua própria chave do Google Gemini, Anthropic Claude ou OpenAI.</p>
+
+      <div class="demo" aria-label="Exemplo de pseudonimização">
+        <div>
+          <small>O seu documento</small>
+          A contratante <strong>Mariana Albuquerque Teixeira</strong>, CPF <strong>123.456.789-10</strong>, residente na <strong>Rua das Acácias, 245</strong>, telefone <strong>(85) 99812-3456</strong>…
+        </div>
+        <div>
+          <small>O que a IA recebe</small>
+          A contratante <mark>[PESSOA_1]</mark>, CPF <mark>[CPF_1]</mark>, residente na <mark>[ENDERECO_1]</mark>, telefone <mark>[TELEFONE_1]</mark>…
+        </div>
+      </div>
+      <p class="nota">Exemplo com dados fictícios.</p>
+    </div>
+
+    <section id="como-funciona">
+      <div class="contido">
+        <h2>Três passos, sem sair do navegador.</h2>
+        <div class="grade g3">
+          <div class="cartao"><span class="numero">1</span><h3>Carregue o material</h3><p>PDF (inclusive digitalizado, com leitura de texto local), Word, imagens, XML de nota fiscal, planilha em CSV, a página aberta ou um processo do PJe.</p></div>
+          <div class="cartao"><span class="numero">2</span><h3>Revise a proteção</h3><p>O Nexpra troca os dados pessoais por marcadores como [PESSOA_1]. Você vê item a item o que foi mascarado e exatamente o texto que a IA vai ler.</p></div>
+          <div class="cartao"><span class="numero">3</span><h3>Peça o trabalho</h3><p>Escolha uma funcionalidade pronta da sua área ou converse livremente. A resposta aparece com os dados reais e pode ir direto para o Word.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="areas">
+      <div class="contido">
+        <h2>Funcionalidades prontas para a sua profissão.</h2>
+        <p class="lead">Cada área traz tarefas prontas, regras de conduta próprias e as consultas que fazem sentido para ela. Você também pode criar as suas.</p>
+        <div class="areas">
+          <span>Jurídico</span><span>Contabilidade</span><span>Saúde</span><span>Psicologia</span><span>Engenharia e arquitetura</span><span>Imobiliário</span><span>Seguros</span><span>Finanças e investimentos</span><span>Educação</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>RH e departamento pessoal</span><span>Uso geral</span>
+        </div>
+        <div class="grade g3">
+          <div class="cartao"><h3>Jurídico</h3><p>Resumo do caso, linha do tempo, análise de contrato, minutas de peças, prazos calculados e explicação ao cliente.</p></div>
+          <div class="cartao"><h3>Saúde e psicologia</h3><p>Resumo clínico, relatórios e laudos, registro de sessão, revisão de evidências e orientações em linguagem simples.</p></div>
+          <div class="cartao"><h3>Contabilidade</h3><p>Análise de demonstrações, comparativo de regimes, conferência de nota fiscal e parecer fiscal.</p></div>
+          <div class="cartao"><h3>Contratações públicas</h3><p>Estudo técnico preliminar, termo de referência, pesquisa no PNCP, análise de edital e conferência de habilitação.</p></div>
+          <div class="cartao"><h3>Educação</h3><p>Plano de aula alinhado à BNCC, avaliações com gabarito, parecer descritivo e comunicados às famílias.</p></div>
+          <div class="cartao"><h3>Imobiliário e seguros</h3><p>Comparação de financiamento por banco, reajuste de aluguel, análise de apólice e Tabela FIPE.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="consultas">
+      <div class="contido">
+        <h2>A IA consulta fontes oficiais, e você vê cada consulta.</h2>
+        <p class="lead">São 32 consultas a fontes públicas e cálculos feitos por código, não "de cabeça" pela IA. Também funcionam sozinhas, sem chave de IA.</p>
+        <div class="grade g2">
+          <div class="cartao"><h3>Leis, processos e compras públicas</h3><ul class="lista"><li>Texto de lei federal por artigo</li><li>Processos no DataJud (CNJ)</li><li>Licitações no PNCP e certidão do TCU</li><li>Cálculo de prazos em dias úteis</li></ul></div>
+          <div class="cartao"><h3>Empresas, índices e tributos</h3><ul class="lista"><li>CNPJ, CNAE, NCM e CEP</li><li>Correção monetária por IPCA, IGP-M, SELIC, INCC</li><li>Taxas de juros por banco e expectativas do mercado</li><li>Reforma Tributária por NCM</li></ul></div>
+          <div class="cartao"><h3>Saúde e ciência</h3><ul class="lista"><li>PubMed, Europe PMC e ensaios clínicos</li><li>Bulas e eventos adversos (FDA)</li><li>Alerta de dengue, zika e chikungunya</li><li>Verificação de referências citadas</li></ul></div>
+          <div class="cartao"><h3>Obras, imóveis e veículos</h3><ul class="lista"><li>Custo de construção por m² (SINAPI)</li><li>Clima histórico por cidade</li><li>Tabela FIPE</li><li>Habilidades da BNCC</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="privacidade">
+      <div class="contido">
+        <h2>Privacidade que dá para conferir.</h2>
+        <div class="grade g2">
+          <div class="cartao"><h3>Sem servidor do Nexpra</h3><p>Não há conta, rastreamento nem anúncios. Seus documentos e conversas ficam na memória do painel: fechou, apagou.</p></div>
+          <div class="cartao"><h3>Proteção sem IA</h3><p>A troca dos dados pessoais por marcadores é feita por regras e dicionário, no seu computador. Nenhum trecho é enviado a um modelo para "descobrir" nomes.</p></div>
+          <div class="cartao"><h3>Última verificação antes do envio</h3><p>Se um CPF, cartão SUS ou cartão de pagamento válido estiver prestes a sair, o Nexpra bloqueia ou pede a sua confirmação.</p></div>
+          <div class="cartao"><h3>Você escolhe a IA</h3><p>O Nexpra usa a sua própria chave do Google Gemini, Anthropic Claude ou OpenAI. A chave fica só no seu navegador.</p></div>
+        </div>
+        <p class="lead" style="margin-top:24px">Leia a <a href="/privacidade">política de privacidade</a> completa.</p>
+      </div>
+    </section>
+
+    <section id="duvidas">
+      <div class="contido">
+        <h2>Dúvidas frequentes</h2>
+        <div style="margin-top:20px">
+          <details><summary>Preciso pagar pela IA?</summary><p>O Nexpra usa a chave de API que você cria no provedor de sua escolha, e o consumo é cobrado por ele. A proteção de dados e as consultas a fontes públicas funcionam sem nenhuma chave.</p></details>
+          <details><summary>A proteção é infalível?</summary><p>Não. Documentos com dígito verificador (CPF, CNPJ, cartão SUS) são reconhecidos com alta precisão; nomes de pessoas são detectados por dicionário e por contexto, e podem escapar. Por isso existe a tela de revisão, em que você confere e ajusta o que será mascarado antes de enviar.</p></details>
+          <details><summary>O que sai do meu computador?</summary><p>O texto que você decide enviar à IA, já com os marcadores no lugar dos dados pessoais, e os parâmetros das consultas a fontes públicas (por exemplo, um CNPJ ou o número de uma lei). A tela mostra o que cada consulta envia.</p></details>
+          <details><summary>Funciona com o PJe?</summary><p>Sim. Em tribunais que usam o PJe, o Nexpra importa o processo aberto usando a sessão que você já tem, e as partes são mascaradas pelo papel processual, como [PARTE AUTORA].</p></details>
+          <details><summary>O Nexpra substitui o profissional?</summary><p>Não. É uma ferramenta de apoio: a revisão e a responsabilidade técnica pelo conteúdo são de quem o utiliza.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="faixa">
+      <div class="contido">
+        <h2>Quer testar antes do lançamento?</h2>
+        <p class="lead">Escreva para a gente e receba o acesso antecipado e as novidades.</p>
+        <a class="botao" href="mailto:contato@nexpra.com.br?subject=Quero%20testar%20o%20Nexpra">contato@nexpra.com.br</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="contido">
+      <span>© 2026 Usina do Tempo · CNPJ 59.267.749/0001-42</span>
+      <a href="/privacidade">Política de privacidade</a>
+      <a href="mailto:contato@nexpra.com.br">contato@nexpra.com.br</a>
+    </div>
+  </footer>
+</body>
+</html>

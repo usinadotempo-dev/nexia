@@ -1,8 +1,8 @@
 {
-  "name": "nexia",
-  "version": "0.2.0",
+  "name": "nexpra",
+  "version": "0.3.0",
   "private": true,
-  "description": "NexIA — IA com proteção de dados para profissionais de qualquer área: anonimização local, receitas por área, consultas a APIs públicas, OCR local e conector PJe.",
+  "description": "Nexpra — IA com proteção de dados para profissionais: anonimização local, funcionalidades por área, fontes públicas e conectores jurídicos.",
   "type": "module",
   "scripts": {
     "build": "vite build",

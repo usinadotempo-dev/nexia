@@ -70,6 +70,19 @@ test('termos personalizados e "nunca mascarar"', () => {
   assert.ok(r.includes('Ana Paula Ribeiro'), r);
 });
 
+test('remover uma fonte: contagens refeitas e dados sem ocorrência apagados da memória', () => {
+  const s = sessao();
+  s.anonimizar('Fonte A: CPF 529.982.247-25.');
+  s.anonimizar('Fonte B: e-mail ana@exemplo.com.br.');
+  assert.equal(s.entidades().length, 2);
+  // Reprocessa só a fonte B (a A foi removida) e descarta o que ficou sem ocorrência.
+  s.zerarContagens();
+  s.anonimizar('Fonte B: e-mail ana@exemplo.com.br.');
+  assert.equal(s.descartarSemOcorrencias(), 1);
+  assert.deepEqual(s.entidades().map((e) => e.tipo), ['EMAIL']);
+  assert.equal(s.desanonimizar('[CPF_1]'), '[CPF_1]', 'o CPF não pode mais ser reidentificado');
+});
+
 test('guarda de saída encontra CPF válido e ignora pseudônimos', () => {
   assert.deepEqual(verificarGuarda('CPF 529.982.247-25', ['CPF']), [{ tipo: 'CPF', quantidade: 1 }]);
   assert.deepEqual(verificarGuarda('CPF [CPF_1] e 123.456.789-00', ['CPF']), []);

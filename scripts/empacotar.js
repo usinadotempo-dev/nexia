@@ -1,5 +1,5 @@
 /**
- * Empacota dist/ em release/nexia-<versão>.zip para envio à Chrome Web Store.
+ * Empacota dist/ em release/nexpra-<versão>.zip para envio à Chrome Web Store.
  * Sem dependências: ZIP com deflate do zlib nativo. Antes de empacotar, valida o
  * básico que a loja rejeitaria (manifesto, versão, ícones, sourcemaps, tamanho).
  *
@@ -44,7 +44,7 @@ function listar(dir, prefixo = '') {
 
 const arquivos = listar(dist).filter((a) => !a.relativo.endsWith('.map'));
 const comMapaInline = arquivos.filter((a) => a.relativo.endsWith('.js') && fs.readFileSync(a.completo, 'utf8').includes('sourceMappingURL=data:'));
-if (comMapaInline.length) console.warn(`AVISO: ${comMapaInline.length} arquivo(s) com sourcemap inline (build de depuração?). Rode o build sem NEXIA_DEPURAR.`);
+if (comMapaInline.length) console.warn(`AVISO: ${comMapaInline.length} arquivo(s) com sourcemap inline (build de depuração?). Rode o build sem NEXPRA_DEPURAR.`);
 
 // ---------------------------------------------------------------------------
 const TABELA = new Uint32Array(256).map((_, n) => {
@@ -110,7 +110,7 @@ fim.writeUInt32LE(deslocamento, 16);
 
 const destino = path.join(raiz, 'release');
 fs.mkdirSync(destino, { recursive: true });
-const arquivoZip = path.join(destino, `nexia-${manifesto.version}.zip`);
+const arquivoZip = path.join(destino, `nexpra-${manifesto.version}.zip`);
 fs.writeFileSync(arquivoZip, Buffer.concat([...locais, ...centrais, fim]));
 
 const mb = (fs.statSync(arquivoZip).size / 1024 / 1024).toFixed(1);

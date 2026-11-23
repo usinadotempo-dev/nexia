@@ -1,5 +1,5 @@
 /**
- * Gera os ícones PNG do NexIA (16/32/48/128) a partir do desenho da marca,
+ * Gera os ícones PNG do Nexpra (16/32/48/128) a partir do desenho da marca,
  * sem dependências externas: rasteriza em RGBA com supersampling 4x e codifica
  * PNG com zlib nativo do Node. O desenho replica assets/icone-fonte.svg.
  *

@@ -1,4 +1,4 @@
-// Motor de OCR do app NexIA. Roda no Offscreen Document. Mantém o serviço PP-OCR
+// Motor de OCR do app Nexpra. Roda no Offscreen Document. Mantém o serviço PP-OCR
 // "quente" (inicializa uma vez) e responde a cada pedido do background com o texto.
 //
 // API: ppu-paddle-ocr v5 (build /web). Modelos embarcados carregados como ArrayBuffer

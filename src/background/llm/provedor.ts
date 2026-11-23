@@ -22,8 +22,16 @@ export interface ProvedorLLM {
   /** Gera com streaming; aoTrecho recebe cada fragmento. Retorna o texto completo. */
   gerarStream(req: RequisicaoLLM, opcoes: OpcoesGeracao, aoTrecho: (texto: string) => void): Promise<string>;
   gerar(req: RequisicaoLLM, opcoes: OpcoesGeracao): Promise<string>;
-  /** Uma rodada (sem streaming) em que o modelo pode pedir ferramentas. */
-  gerarComFerramentas(req: RequisicaoLLM, opcoes: OpcoesGeracao, ferramentas: FerramentaLLM[]): Promise<RespostaComFerramentas>;
+  /**
+   * Uma rodada em que o modelo pode pedir ferramentas. O texto chega aos poucos por
+   * `aoTrecho` (streaming); as chamadas de ferramenta vêm completas no retorno.
+   */
+  gerarComFerramentas(
+    req: RequisicaoLLM,
+    opcoes: OpcoesGeracao,
+    ferramentas: FerramentaLLM[],
+    aoTrecho?: (texto: string) => void
+  ): Promise<RespostaComFerramentas>;
 }
 
 export async function extrairErroHttp(resposta: Response, provedor: string): Promise<Error> {

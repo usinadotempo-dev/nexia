@@ -7,7 +7,7 @@ import { SessaoAnonimizacao } from '@shared/anonimizador/motor';
 import { obterArea } from '@shared/areas/catalogo';
 import type { Area } from '@shared/areas/tipos';
 import { LIMITES } from '@shared/constantes';
-import type { ConfigNexia, MensagemLLM } from '@shared/tipos';
+import type { ConfigNexpra, MensagemLLM } from '@shared/tipos';
 
 export type OrigemFonte = 'arquivo' | 'colado' | 'pagina' | 'selecao' | 'pje' | 'consulta';
 
@@ -23,19 +23,29 @@ export interface Fonte {
   erro?: string;
 }
 
+export interface ConsultaExibida {
+  titulo: string;
+  estado: 'andamento' | 'ok' | 'falha';
+  detalhe?: string;
+  /** Início da consulta (para mostrar o tempo decorrido). */
+  inicio?: number;
+  /** Presente enquanto em andamento: segue sem esperar o resultado. */
+  pular?: () => void;
+}
+
 export interface MensagemExibida {
   papel: 'usuario' | 'assistente';
   /** Texto no "espaço do modelo" (pseudonimizado quando a proteção está ligada). */
   texto: string;
   receita?: string;
-  consultas: Array<{ titulo: string; estado: 'andamento' | 'ok' | 'falha'; detalhe?: string }>;
+  consultas: ConsultaExibida[];
   erro?: string;
   /** Pergunta (no espaço do modelo) retirada do histórico após erro — usada em "tentar de novo". */
   pendenteIa?: string;
 }
 
 class Espaco {
-  config!: ConfigNexia;
+  config!: ConfigNexpra;
   area!: Area;
   fontes: Fonte[] = [];
   protecao = true;
@@ -48,7 +58,7 @@ class Espaco {
   private protegidos = new Map<string, string>();
   private ouvintes = new Set<() => void>();
 
-  iniciar(config: ConfigNexia): void {
+  iniciar(config: ConfigNexpra): void {
     this.config = config;
     this.area = obterArea(config.areaAtiva);
     this.protecao = config.anonimizarPorPadrao;
@@ -84,9 +94,7 @@ class Espaco {
     this.sessao.zerarContagens();
     this.protegidos.clear();
     if (!this.protecao) return;
-    for (const f of this.fontes) {
-      if (f.status === 'pronta') this.protegidos.set(f.id, this.sessao.anonimizar(f.texto).texto);
-    }
+    for (const f of this.fontesIncluidas()) this.protegidos.set(f.id, this.sessao.anonimizar(f.texto).texto);
   }
 
   textoParaIa(f: Fonte): string {
@@ -121,12 +129,18 @@ class Espaco {
     if (!f) return;
     Object.assign(f, mudancas);
     if (mudancas.texto !== undefined) this.protegidos.delete(id);
+    // Incluir/excluir uma fonte muda o que é pseudonimizado: refaz o levantamento.
+    if (mudancas.incluida !== undefined) this.reprocessar();
     this.notificar();
   }
 
   removerFonte(id: string): void {
     this.fontes = this.fontes.filter((f) => f.id !== id);
     this.protegidos.delete(id);
+    this.reprocessar();
+    // Sem conversa, nenhum texto enviado depende dos pseudônimos da fonte removida:
+    // os dados originais dela saem também da memória.
+    if (this.historico.length === 0 && this.exibidas.length === 0) this.sessao.descartarSemOcorrencias();
     this.notificar();
   }
 
@@ -169,6 +183,8 @@ class Espaco {
   reiniciarConversa(): void {
     this.historico = [];
     this.exibidas = [];
+    this.reprocessar();
+    this.sessao.descartarSemOcorrencias(); // dados vistos só na conversa saem da memória
     this.notificar();
   }
 
@@ -178,6 +194,7 @@ class Espaco {
     this.historico = [];
     this.exibidas = [];
     this.reprocessar();
+    this.sessao.descartarSemOcorrencias();
     this.notificar();
   }
 }

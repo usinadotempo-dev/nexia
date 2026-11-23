@@ -17,12 +17,15 @@ export interface SnapshotAuth {
 }
 
 export type ModoGuarda = 'bloquear' | 'confirmar' | 'desligada';
+export type EsforcoRaciocinio = 'low' | 'medium' | 'high';
 
-export interface ConfigNexia {
+export interface ConfigNexpra {
   provedorAtivo: ProvedorId;
   modelos: Record<ProvedorId, string>;
   temperatura: number;
   maxTokens: number;
+  /** Quanto o modelo raciocina antes de responder (mais = melhor e mais lento/caro). */
+  esforcoRaciocinio: EsforcoRaciocinio;
   /** Conector PJe: hosts em que a extensão fica desligada. */
   hostsBloqueados: string[];
   ocrAutomatico: boolean;
@@ -121,6 +124,8 @@ export interface RequisicaoLLM {
   mensagens: MensagemLLM[];
   temperatura?: number;
   maxTokens?: number;
+  /** Profundidade de raciocínio (modelos que a aceitam). */
+  esforco?: EsforcoRaciocinio;
   /** Nomes das ferramentas que o modelo pode chamar nesta requisição. */
   ferramentas?: string[];
   /** O usuário confirmou o envio apesar de achados da guarda de saída. */

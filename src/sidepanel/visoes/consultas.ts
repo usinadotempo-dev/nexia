@@ -102,7 +102,8 @@ export function criarVisaoConsultas(ctx: Contexto): Visao {
       botaoExecutar.disabled = true;
       ctx.status(`Consultando: ${def.titulo}…`, { carregando: true });
       try {
-        const r = await enviar<RespostaFerramenta>('FERRAMENTA_EXECUTAR', { nome: def.nome, args });
+        // Consulta feita à mão pode esperar mais que a IA (o usuário vê o andamento).
+        const r = await enviar<RespostaFerramenta>('FERRAMENTA_EXECUTAR', { nome: def.nome, args, prazoMs: 90_000 });
         if (r.falha) {
           ultimoResultado = null;
           resultado.textContent = '';

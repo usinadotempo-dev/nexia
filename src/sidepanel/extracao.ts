@@ -29,7 +29,7 @@ function extensao(nome: string): string {
 
 function limitar(texto: string): string {
   const t = texto.replace(/[ \t]+\n/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim();
-  return t.length > LIMITES.POR_DOCUMENTO_CHARS * 2 ? `${t.slice(0, LIMITES.POR_DOCUMENTO_CHARS * 2)}\n[… conteúdo truncado pelo NexIA]` : t;
+  return t.length > LIMITES.POR_DOCUMENTO_CHARS * 2 ? `${t.slice(0, LIMITES.POR_DOCUMENTO_CHARS * 2)}\n[… conteúdo truncado pelo Nexpra]` : t;
 }
 
 async function ocrImagem(dataUrl: string): Promise<string> {
@@ -194,18 +194,31 @@ export async function extrairArquivo(arquivo: File, opcoes: { maxPaginasOcr: num
   }
 }
 
-/** Lê o texto visível (ou a seleção) da aba ativa. Pede permissão ao site na primeira vez. */
+export const ORIGENS_LEITURA = ['https://*/*', 'http://*/*'];
+
+/**
+ * Aba ativa da janela deste painel. Sem permissão de acesso ao site, o Chrome não
+ * revela a URL — `podeLer` indica se já é possível ler a página sem pedir nada.
+ */
+export async function abaAtiva(): Promise<{ id: number; url?: string; podeLer: boolean }> {
+  const [aba] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!aba?.id) throw new Error('Não encontrei uma aba aberta nesta janela.');
+  return { id: aba.id, url: aba.url, podeLer: Boolean(aba.url) };
+}
+
+/** Pede (uma única vez) a permissão opcional de leitura de páginas. Exige gesto do usuário. */
+export function pedirPermissaoLeitura(): Promise<boolean> {
+  return chrome.permissions.request({ origins: ORIGENS_LEITURA });
+}
+
+/** Lê o texto visível (ou a seleção) da aba ativa. Requer acesso ao site (ver abaAtiva). */
 export async function lerAbaAtiva(): Promise<{ titulo: string; texto: string; url: string; selecao: boolean }> {
-  const [aba] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
-  if (!aba?.id || !aba.url) throw new Error('Nenhuma aba ativa.');
-  if (!/^https?:/.test(aba.url)) throw new Error('Esta página não pode ser lida (página interna do navegador).');
-  if (/\.pdf($|\?)/i.test(aba.url)) throw new Error('PDF aberto no navegador: baixe o arquivo e solte-o em "Fontes".');
-  const origem = `${new URL(aba.url).origin}/*`;
-  const temPermissao = await chrome.permissions.contains({ origins: [origem] });
-  if (!temPermissao) {
-    const concedida = await chrome.permissions.request({ origins: [origem] });
-    if (!concedida) throw new Error('Permissão para ler este site não concedida.');
-  }
+  const { id } = await abaAtiva();
+  const url = (await chrome.tabs.get(id)).url;
+  if (!url) throw new Error('Sem permissão para ler esta página. Use o botão direito → "Nexpra: levar esta página para o painel".');
+  if (!/^https?:/.test(url)) throw new Error('Esta página não pode ser lida (página interna do navegador ou da loja de extensões).');
+  if (/\.pdf($|\?)/i.test(url)) throw new Error('PDF aberto no navegador: baixe o arquivo e solte-o em "Fontes".');
+  const aba = { id, url };
   const [r] = await chrome.scripting.executeScript({
     target: { tabId: aba.id },
     func: () => {
@@ -215,5 +228,5 @@ export async function lerAbaAtiva(): Promise<{ titulo: string; texto: string; ur
   });
   const res = r?.result as { texto: string; selecao: boolean; titulo: string } | undefined;
   if (!res?.texto.trim()) throw new Error('A página não tem texto legível.');
-  return { titulo: res.titulo || aba.title || 'Página', texto: limitar(res.texto), url: aba.url, selecao: res.selecao };
+  return { titulo: res.titulo || 'Página', texto: limitar(res.texto), url: aba.url, selecao: res.selecao };
 }

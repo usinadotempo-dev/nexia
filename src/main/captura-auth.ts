@@ -62,13 +62,13 @@
   };
 
   // --- XMLHttpRequest ---
-  interface XhrComNexia extends XMLHttpRequest {
+  interface XhrComNexpra extends XMLHttpRequest {
     __nexiaUrl?: string;
     __nexiaCabecalhos?: Record<string, string>;
   }
 
   const abrirOriginal = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function (this: XhrComNexia, ...args: unknown[]): void {
+  XMLHttpRequest.prototype.open = function (this: XhrComNexpra, ...args: unknown[]): void {
     try {
       const url = String(args[1] ?? '');
       if (url.includes(ALVO)) {
@@ -82,7 +82,7 @@
   };
 
   const setHeaderOriginal = XMLHttpRequest.prototype.setRequestHeader;
-  XMLHttpRequest.prototype.setRequestHeader = function (this: XhrComNexia, nome: string, valor: string): void {
+  XMLHttpRequest.prototype.setRequestHeader = function (this: XhrComNexpra, nome: string, valor: string): void {
     try {
       if (this.__nexiaCabecalhos) {
         const chave = nome.toLowerCase();
@@ -95,7 +95,7 @@
   };
 
   const enviarOriginal = XMLHttpRequest.prototype.send;
-  XMLHttpRequest.prototype.send = function (this: XhrComNexia, corpo?: XMLHttpRequestBodyInit | null): void {
+  XMLHttpRequest.prototype.send = function (this: XhrComNexpra, corpo?: XMLHttpRequestBodyInit | null): void {
     try {
       if (this.__nexiaUrl && this.__nexiaCabecalhos) {
         publicar(this.__nexiaUrl, this.__nexiaCabecalhos);

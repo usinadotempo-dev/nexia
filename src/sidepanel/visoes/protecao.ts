@@ -22,7 +22,7 @@ export function criarVisaoProtecao(ctx: Contexto): Visao {
   function relatorio(): string {
     const resumo = espaco.sessao.resumoPorTipo();
     const linhas = [
-      'RELATÓRIO DE PSEUDONIMIZAÇÃO — NexIA (processamento local)',
+      'RELATÓRIO DE PSEUDONIMIZAÇÃO — Nexpra (processamento local)',
       `Data: ${new Date().toLocaleString('pt-BR')}`,
       `Área: ${espaco.area.nome}`,
       `Fontes: ${espaco.fontesIncluidas().map((f) => espaco.paraIa(f.nome)).join('; ') || 'nenhuma'}`,

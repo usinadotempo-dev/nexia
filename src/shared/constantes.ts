@@ -1,4 +1,4 @@
-import type { ConfigNexia, ProvedorId } from './tipos';
+import type { ConfigNexpra, ProvedorId } from './tipos';
 
 export interface ModeloInfo {
   id: string;
@@ -8,23 +8,42 @@ export interface ModeloInfo {
   maxSaida: number;
 }
 
-/** Catálogo de modelos por provedor (edite conforme os lançamentos; as opções aceitam modelo personalizado). */
+/**
+ * Catálogo de modelos por provedor — conferido na documentação oficial em 22/11/2026
+ * (edite conforme os lançamentos; as opções aceitam modelo personalizado).
+ */
 export const PROVEDOR_MODELOS: Record<ProvedorId, readonly ModeloInfo[]> = {
   anthropic: [
-    { id: 'claude-opus-5-5', rotulo: 'Claude Opus 5.5 (mais capaz)', maxSaida: 32000 },
-    { id: 'claude-sonnet-5-5', rotulo: 'Claude Sonnet 5.5 (equilibrado)', recomendado: true, maxSaida: 32000 },
-    { id: 'claude-haiku-5-5', rotulo: 'Claude Haiku 5.5 (rápido e econômico)', maxSaida: 32000 }
+    { id: 'claude-opus-5-5', rotulo: 'Claude Opus 5.5 (mais capaz)', maxSaida: 128000 },
+    { id: 'claude-sonnet-5-5', rotulo: 'Claude Sonnet 5.5 (equilibrado)', recomendado: true, maxSaida: 128000 },
+    { id: 'claude-haiku-5-5', rotulo: 'Claude Haiku 5.5 (rápido e econômico)', maxSaida: 128000 }
   ],
   openai: [
-    { id: 'gpt-5.1', rotulo: 'GPT-5.1 (equilibrado)', recomendado: true, maxSaida: 32000 },
-    { id: 'gpt-5', rotulo: 'GPT-5', maxSaida: 32000 },
-    { id: 'gpt-4.1', rotulo: 'GPT-4.1', maxSaida: 16384 }
+    { id: 'gpt-6.2-astra', rotulo: 'GPT-6.2 Astra (mais capaz)', maxSaida: 128000 },
+    { id: 'gpt-6.2-sol', rotulo: 'GPT-6.2 Sol (equilibrado)', recomendado: true, maxSaida: 128000 },
+    { id: 'gpt-6.1-terra', rotulo: 'GPT-6.1 Terra (rápido)', maxSaida: 128000 },
+    { id: 'gpt-6-luna', rotulo: 'GPT-6 Luna (econômico)', maxSaida: 128000 }
   ],
   gemini: [
-    { id: 'gemini-2.5-flash', rotulo: 'Gemini 2.5 Flash (equilibrado)', recomendado: true, maxSaida: 65536 },
-    { id: 'gemini-2.5-pro', rotulo: 'Gemini 2.5 Pro (mais capaz)', maxSaida: 65536 },
-    { id: 'gemini-2.0-flash', rotulo: 'Gemini 2.0 Flash (rápido)', maxSaida: 8192 }
+    { id: 'gemini-4-carbon', rotulo: 'Gemini 4 Carbon (raciocínio mais forte)', maxSaida: 65536 },
+    { id: 'gemini-4-hydrogen', rotulo: 'Gemini 4 Hydrogen (indicado pelo Google para projetos novos)', maxSaida: 65536 },
+    { id: 'gemini-3.8-flash', rotulo: 'Gemini 3.8 Flash (estável, equilibrado)', recomendado: true, maxSaida: 65536 },
+    { id: 'gemini-3.5-flash-lite', rotulo: 'Gemini 3.5 Flash-Lite (rápido e econômico)', maxSaida: 65536 }
   ]
+};
+
+/**
+ * Modelos desligados ou descontinuados → substituto. Configurações salvas com eles são
+ * migradas automaticamente ao carregar (evita erro quando o provedor desliga o modelo).
+ */
+export const MODELOS_SUBSTITUIDOS: Record<string, string> = {
+  'gemini-2.0-flash': 'gemini-3.8-flash',
+  'gemini-2.0-flash-lite': 'gemini-3.5-flash-lite',
+  'gemini-2.5-flash': 'gemini-3.8-flash',
+  'gemini-2.5-pro': 'gemini-4-carbon',
+  'gpt-5': 'gpt-6.2-sol',
+  'gpt-5.1': 'gpt-6.2-sol',
+  'gpt-4.1': 'gpt-6-luna'
 };
 
 export function maxSaidaDoModelo(provedor: ProvedorId, modeloId: string): number {
@@ -73,15 +92,17 @@ export const ENDPOINTS_PROVEDOR = {
  */
 export const DATAJUD_CHAVE_PUBLICA_PADRAO = 'cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==';
 
-export const CONFIG_PADRAO: ConfigNexia = {
+export const CONFIG_PADRAO: ConfigNexpra = {
   provedorAtivo: 'gemini',
   modelos: {
     anthropic: 'claude-sonnet-5-5',
-    openai: 'gpt-5.1',
-    gemini: 'gemini-2.5-flash'
+    openai: 'gpt-6.2-sol',
+    gemini: 'gemini-3.8-flash'
   },
   temperatura: 0.3,
-  maxTokens: 8192,
+  // O raciocínio dos modelos novos também consome este limite: 16 mil evita cortar peças longas.
+  maxTokens: 16000,
+  esforcoRaciocinio: 'medium',
   hostsBloqueados: [],
   ocrAutomatico: true,
   ocrMaxPaginasPorDoc: 20,
