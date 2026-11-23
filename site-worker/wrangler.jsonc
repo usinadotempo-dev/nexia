@@ -1,0 +1,38 @@
+{
+	// Site do Nexpra: páginas estáticas (pasta ../site) + endpoint do formulário de acesso.
+	// O "name" deve ser o MESMO do Worker que já serve nexpra.com.br, para a implantação
+	// substituir o que está no ar e manter o domínio. Se você o renomeou no painel, ajuste aqui.
+	"name": "empty-sound-aa28",
+	"main": "src/index.js",
+	"compatibility_date": "2026-11-01",
+	// Domínio próprio ligado a este Worker.
+	"routes": [
+		{ "pattern": "nexpra.com.br", "custom_domain": true }
+	],
+	"assets": {
+		"directory": "../site",
+		"binding": "ASSETS",
+		// Só /api/* passa pelo código; o resto é servido direto como arquivo.
+		"run_worker_first": [
+			"/api/*"
+		]
+	},
+	// E-mail transacional (Cloudflare Email Sending). O domínio nexpra.com.br precisa estar
+	// habilitado para envio: npx wrangler email sending enable nexpra.com.br
+	"send_email": [
+		{
+			"name": "EMAIL"
+		}
+	],
+	// Banco dos pedidos de acesso (criado com: npx wrangler d1 create nexpra-leads).
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "nexpra-leads",
+			"database_id": "40eebdff-90c2-48d4-969c-f89d65e04014"
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
+}

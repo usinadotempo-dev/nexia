@@ -1,6 +1,8 @@
 node_modules/
 dist/
 release/
+.wrangler/
+.dev.vars
 *.zip
 # Amostras de teste podem conter dados reais (LGPD) — nunca versionar
 samples/*
@@ -9,3 +11,7 @@ samples/*
 # Modelo de idioma do Tesseract (grande, baixado uma vez — ver README)
 assets/tesseract/lang/*.traineddata
 assets/tesseract/lang/*.traineddata.gz
+
+.dev.vars*
+!.dev.vars.example
+!.env.example

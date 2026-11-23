@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pedir acesso — Nexpra</title>
+  <meta name="description" content="Peça acesso antecipado ao Nexpra, a extensão que protege dados pessoais antes de enviá-los à IA.">
+  <meta name="theme-color" content="#000000">
+  <link rel="canonical" href="https://nexpra.com.br/acesso">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='4' width='120' height='120' rx='26' fill='%230a0a0a'/%3E%3Cpath d='M42 90 V40 L82 88 V60' stroke='%23fff' stroke-width='13' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='82' cy='38' r='8' fill='%23fff'/%3E%3C/svg%3E">
+  <style>
+    :root { --preto: #000; --carvao: #0d0d0d; --linha: #2a2a2a; --cinza: #8a8a8a; --cinza-claro: #b8b8b8; --branco: #fff; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--preto); color: var(--branco); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif; -webkit-font-smoothing: antialiased; min-height: 100vh; display: flex; flex-direction: column; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--branco); outline-offset: 3px; border-radius: 6px; }
+    nav { border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+    nav div { width: min(1120px, 100% - 40px); margin-inline: auto; height: 52px; display: flex; align-items: center; }
+    .marca { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 17px; text-decoration: none; }
+    .marca svg { width: 24px; height: 24px; }
+    main { flex: 1; display: grid; place-items: center; padding: 48px 20px 72px; position: relative; overflow: hidden; }
+    main::before { content: ""; position: absolute; left: 50%; top: 0; width: 900px; height: 700px; margin-left: -450px; background: radial-gradient(ellipse at 50% 0%, rgba(255, 255, 255, 0.12), transparent 65%); pointer-events: none; }
+    .caixa { position: relative; width: min(520px, 100%); }
+    .rotulo { font: 600 12px/1 ui-monospace, Consolas, monospace; letter-spacing: 0.14em; text-transform: uppercase; color: var(--cinza); margin-bottom: 16px; }
+    h1 { font-size: clamp(36px, 7vw, 56px); line-height: 1.02; letter-spacing: -0.04em; }
+    .sub { color: var(--cinza-claro); margin: 16px 0 32px; font-size: 17px; }
+    form { display: flex; flex-direction: column; gap: 16px; }
+    .campo { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 13px; font-weight: 600; color: var(--cinza-claro); }
+    input[type="text"], input[type="email"], input[type="tel"], select {
+      width: 100%; height: 50px; padding: 0 16px; border-radius: 12px; border: 1px solid #4a4a4a; background: #1f1f1f; color: var(--branco); font: inherit; transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    input:hover, select:hover { border-color: #6e6e6e; }
+    input::placeholder { color: #8a8a8a; }
+    select option { background: #1f1f1f; color: #fff; }
+    input:focus, select:focus { outline: none; border-color: var(--branco); background: #262626; box-shadow: 0 0 0 1px var(--branco); }
+    input[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--branco); border-style: dashed; }
+    .erro-campo { font-size: 13px; color: var(--branco); min-height: 0; }
+    .erro-campo:not(:empty)::before { content: "! "; font-weight: 800; }
+    .aceite { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: var(--cinza-claro); font-weight: 400; cursor: pointer; }
+    .aceite input { width: 18px; height: 18px; margin-top: 2px; accent-color: #fff; flex: none; }
+    .armadilha { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+    button { height: 54px; border-radius: 999px; border: 0; background: var(--branco); color: var(--preto); font: inherit; font-weight: 600; font-size: 16px; cursor: pointer; margin-top: 6px; transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s; }
+    button:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 0 44px rgba(255, 255, 255, 0.3); }
+    button:disabled { opacity: 0.55; cursor: progress; }
+    .aviso { border: 1px dashed var(--branco); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+    .aviso:empty { display: none; }
+    .sucesso { text-align: left; animation: surgir 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); }
+    .sucesso .selo { width: 64px; height: 64px; border-radius: 50%; background: var(--branco); color: var(--preto); display: grid; place-items: center; margin-bottom: 26px; }
+    .sucesso .selo svg { width: 30px; height: 30px; stroke: currentColor; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; stroke-dashoffset: 40; animation: tracar 0.6s 0.3s forwards; }
+    .sucesso p { color: var(--cinza-claro); margin-top: 16px; font-size: 17px; }
+    .sucesso p strong { color: var(--branco); }
+    .sucesso a.voltar { display: inline-block; margin-top: 30px; font-weight: 600; text-underline-offset: 4px; }
+    @keyframes surgir { from { opacity: 0; transform: translateY(24px); } }
+    @keyframes tracar { to { stroke-dashoffset: 0; } }
+    footer { border-top: 1px solid rgba(255, 255, 255, 0.08); padding: 22px 20px 30px; color: var(--cinza); font-size: 13px; text-align: center; }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } .sucesso .selo svg { stroke-dashoffset: 0; } }
+  </style>
+</head>
+<body>
+  <nav><div>
+    <a class="marca" href="/" aria-label="Nexpra, página inicial">
+      <svg viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="#fff"/><path d="M42 90 V40 L82 88 V60" stroke="#000" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="#000"/></svg>
+      Nexpra
+    </a>
+  </div></nav>
+
+  <main>
+    <div class="caixa" id="caixa">
+      <div id="bloco-form">
+        <p class="rotulo">Acesso antecipado</p>
+        <h1>Peça o seu acesso.</h1>
+        <p class="sub">Preencha os dados abaixo. Em breve, as informações de acesso chegarão no seu e-mail.</p>
+
+        <form id="form" novalidate>
+          <div class="campo">
+            <label for="nome">Nome</label>
+            <input id="nome" name="nome" type="text" autocomplete="name" maxlength="120" required>
+            <span class="erro-campo" id="erro-nome" role="alert"></span>
+          </div>
+          <div class="campo">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="160" required>
+            <span class="erro-campo" id="erro-email" role="alert"></span>
+          </div>
+          <div class="campo">
+            <label for="telefone">Telefone com DDD</label>
+            <input id="telefone" name="telefone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" placeholder="(85) 99999-9999" required>
+            <span class="erro-campo" id="erro-telefone" role="alert"></span>
+          </div>
+          <div class="campo">
+            <label for="area">Área profissional</label>
+            <select id="area" name="area" required>
+              <option value="">Selecione…</option>
+              <option>Jurídico</option>
+              <option>Contabilidade</option>
+              <option>Saúde</option>
+              <option>Psicologia</option>
+              <option>Engenharia e arquitetura</option>
+              <option>Imobiliário</option>
+              <option>Seguros</option>
+              <option>Finanças e investimentos</option>
+              <option>Educação</option>
+              <option>Contratações públicas</option>
+              <option>Serviço social</option>
+              <option>Cartórios</option>
+              <option>RH e departamento pessoal</option>
+              <option>Outra</option>
+            </select>
+            <span class="erro-campo" id="erro-area" role="alert"></span>
+          </div>
+          <!-- Campo-armadilha contra robôs: pessoas não o veem nem preenchem. -->
+          <div class="armadilha" aria-hidden="true"><label for="site">Não preencha</label><input id="site" name="site" type="text" tabindex="-1" autocomplete="off"></div>
+          <label class="aceite">
+            <input id="aceite" name="aceite" type="checkbox" required>
+            <span>Concordo em receber por e-mail as instruções de acesso ao Nexpra e li a <a href="/privacidade#formulario" target="_blank" rel="noopener">política de privacidade</a>.</span>
+          </label>
+          <span class="erro-campo" id="erro-aceite" role="alert"></span>
+          <div class="aviso" id="aviso" role="alert"></div>
+          <button type="submit" id="enviar">Pedir acesso</button>
+        </form>
+      </div>
+
+      <div class="sucesso" id="bloco-sucesso" hidden tabindex="-1">
+        <div class="selo"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 17l6 6 12-13"/></svg></div>
+        <p class="rotulo">Pedido realizado</p>
+        <h1>Recebemos o seu pedido.</h1>
+        <p>Em breve, as informações de acesso chegarão no e-mail <strong id="email-confirmado"></strong>, com os dados e as instruções para começar a usar.</p>
+        <p>Fique de olho também na caixa de spam. A mensagem será enviada pela equipe do Nexpra.</p>
+        <a class="voltar" href="/">← Voltar ao início</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>© 2026 Usina do Tempo · CNPJ 59.267.749/0001-42 · <a href="/privacidade">Política de privacidade</a></footer>
+
+  <script>
+  (function () {
+    'use strict';
+    var $ = function (id) { return document.getElementById(id); };
+    var form = $('form'), botao = $('enviar'), aviso = $('aviso');
+    var aberto = Date.now();
+
+    $('telefone').addEventListener('input', function (ev) {
+      var d = ev.target.value.replace(/\D/g, '').slice(0, 11);
+      var s = d;
+      if (d.length > 2) s = '(' + d.slice(0, 2) + ') ' + d.slice(2);
+      if (d.length > 6) s = '(' + d.slice(0, 2) + ') ' + d.slice(2, d.length - 4) + '-' + d.slice(-4);
+      ev.target.value = s;
+    });
+
+    var erro = function (campo, mensagem) {
+      $('erro-' + campo).textContent = mensagem || '';
+      var el = $(campo);
+      if (el) el.setAttribute('aria-invalid', mensagem ? 'true' : 'false');
+      return !mensagem;
+    };
+
+    var validar = function () {
+      var ok = true, primeiro = null;
+      var marcar = function (campo, mensagem) {
+        if (!erro(campo, mensagem)) { ok = false; primeiro = primeiro || $(campo); }
+      };
+      marcar('nome', $('nome').value.trim().length < 2 ? 'Informe o seu nome.' : '');
+      marcar('email', /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test($('email').value.trim()) ? '' : 'Informe um e-mail válido.');
+      var digitos = $('telefone').value.replace(/\D/g, '');
+      marcar('telefone', digitos.length < 10 ? 'Informe o telefone com DDD.' : '');
+      marcar('area', $('area').value ? '' : 'Selecione a sua área.');
+      marcar('aceite', $('aceite').checked ? '' : 'Marque a caixa para continuar.');
+      if (primeiro) primeiro.focus();
+      return ok;
+    };
+
+    form.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      aviso.textContent = '';
+      if (!validar()) return;
+      botao.disabled = true;
+      botao.textContent = 'Enviando…';
+      var email = $('email').value.trim();
+      fetch('/api/acesso', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          nome: $('nome').value.trim(),
+          email: email,
+          telefone: $('telefone').value.trim(),
+          area: $('area').value,
+          aceite: $('aceite').checked,
+          site: $('site').value,
+          tempo: Date.now() - aberto
+        })
+      })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, corpo: j }; }); })
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.corpo.erro || 'Não foi possível registrar o pedido agora.');
+          $('email-confirmado').textContent = email;
+          $('bloco-form').hidden = true;
+          $('bloco-sucesso').hidden = false;
+          $('bloco-sucesso').focus();
+          window.scrollTo(0, 0);
+        })
+        .catch(function (e) {
+          aviso.textContent = (e && e.message ? e.message : 'Não foi possível registrar o pedido agora.') + ' Tente de novo ou escreva para contato@nexpra.com.br.';
+          botao.disabled = false;
+          botao.textContent = 'Pedir acesso';
+        });
+    });
+  })();
+  </script>
+</body>
+</html>

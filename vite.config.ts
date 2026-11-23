@@ -38,17 +38,14 @@ export default defineConfig({
       }
     }
   },
-  plugins: [
-    crx({ manifest }),
-    viteStaticCopy({
-      targets: [
-        // Modelos PP-OCR → dist/assets/models/ (offscreen os carrega por getURL).
-        { src: 'public/assets/models/*', dest: 'assets/models' },
-        // ONNX Runtime Web: binário .wasm + loader .mjs de cada backend.
-        { src: 'node_modules/onnxruntime-web/dist/ort-wasm*.{wasm,mjs}', dest: 'assets' },
-        // Worker do pdf.js (extrator-docs.ts o aponta em libs/pdf.worker.min.mjs).
-        { src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs', dest: 'libs' }
-      ]
-    })
-  ]
+  plugins: [crx({ manifest }), viteStaticCopy({
+    targets: [
+      // Modelos PP-OCR → dist/assets/models/ (offscreen os carrega por getURL).
+      { src: 'public/assets/models/*', dest: 'assets/models' },
+      // ONNX Runtime Web: binário .wasm + loader .mjs de cada backend.
+      { src: 'node_modules/onnxruntime-web/dist/ort-wasm*.{wasm,mjs}', dest: 'assets' },
+      // Worker do pdf.js (extrator-docs.ts o aponta em libs/pdf.worker.min.mjs).
+      { src: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs', dest: 'libs' }
+    ]
+  })]
 });

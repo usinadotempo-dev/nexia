@@ -10,7 +10,7 @@ de forma direta, o que acontece com as informações que você usa na extensão.
 
 ## 1. Resumo
 
-- **O Nexpra não tem servidor.** Não coletamos, não recebemos e não armazenamos seus documentos, conversas, dados pessoais de terceiros nem chaves de API. Não há contas, rastreamento, analytics nem publicidade.
+- **A extensão Nexpra não tem servidor.** Ao usá-la, não coletamos, não recebemos e não armazenamos seus documentos, conversas, dados pessoais de terceiros nem chaves de API. Não há contas, rastreamento, analytics nem publicidade.
 - O processamento (leitura de arquivos, reconhecimento de texto/OCR e anonimização) acontece **no seu navegador**.
 - Só saem do seu navegador: (a) o texto que **você** decide enviar ao provedor de IA que **você** configurou, já pseudonimizado se a proteção estiver ligada; e (b) os parâmetros das consultas a fontes públicas que você ou a IA acionarem, sempre indicados na tela.
 
@@ -37,6 +37,16 @@ navegador, sempre por ação sua:
 
 1. **Provedor de IA escolhido por você** (Google Gemini, Anthropic ou OpenAI), usando a **sua** chave de API. O conteúdo enviado é regido pelos termos e pela política de privacidade desse provedor. Com a proteção de dados ligada (padrão), nomes, documentos, contatos e outros dados pessoais são substituídos por pseudônimos **antes** do envio, e uma verificação final impede o envio de CPF, cartão SUS e cartão de pagamento válidos sem a sua confirmação.
 2. **Fontes públicas de dados**, quando uma consulta é executada: BrasilAPI, ViaCEP, Banco Central do Brasil, IBGE, CNJ (DataJud), CGU (Portal da Transparência), TCU, PNCP, Senado Federal e normas.leg.br, Câmara dos Deputados, Receita Federal (calculadora da Reforma Tributária), Querido Diário, Tabela FIPE (via parallelum), NCBI/PubMed, Europe PMC, ClinicalTrials.gov, openFDA, NLM Clinical Tables, InfoDengue, api.bncc.dev, Crossref e Open-Meteo. Vão apenas os parâmetros da consulta (por exemplo, um CNPJ, um CEP, um número de processo, um termo de busca ou o nome de uma cidade), e a tela indica o que é enviado. Nenhuma consulta recebe CPF nem dados de saúde de pessoas.
+
+## Formulário de acesso antecipado (site)
+
+O que foi dito acima vale para a extensão. O site nexpra.com.br tem um formulário de pedido de acesso, e nele há coleta de dados: **nome, e-mail, telefone e área profissional**, informados por você.
+
+- **Finalidade:** registrar o pedido e enviar, por e-mail, os dados e instruções de acesso. Não usamos esses dados para outra finalidade nem os vendemos.
+- **Base legal:** o seu consentimento, dado ao marcar a caixa do formulário.
+- **Onde ficam:** em banco de dados e serviço de e-mail da Cloudflare, que atua como operadora e pode processá-los fora do Brasil.
+- **Por quanto tempo:** até a liberação do acesso e pelo período em que você usar o Nexpra, ou até você pedir a exclusão.
+- **Seus direitos:** para acessar, corrigir ou excluir esses dados, ou retirar o consentimento, escreva para contato@nexpra.com.br.
 
 ## 4. Permissões do navegador
 

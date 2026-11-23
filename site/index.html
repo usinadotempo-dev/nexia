@@ -4,199 +4,365 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nexpra — IA com proteção de dados para profissionais</title>
-  <meta name="description" content="Extensão para o Chrome que mascara dados pessoais no seu computador antes de enviar documentos à IA. Funcionalidades prontas para 14 áreas e consultas a fontes públicas oficiais.">
-  <meta property="og:title" content="Nexpra — IA com proteção de dados para profissionais">
+  <meta name="description" content="Extensão para o Chrome que mascara dados pessoais no seu computador antes de enviar documentos à IA. Funcionalidades prontas para 14 áreas e 32 consultas a fontes públicas oficiais.">
+  <meta property="og:title" content="Nexpra — IA no trabalho, sem expor ninguém">
   <meta property="og:description" content="Use IA com contratos, processos, prontuários e planilhas sem expor dados pessoais.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://nexpra.com.br/">
+  <meta name="theme-color" content="#000000">
   <link rel="canonical" href="https://nexpra.com.br/">
   <link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='4' y='4' width='120' height='120' rx='26' fill='%230a0a0a'/%3E%3Cpath d='M42 90 V40 L82 88 V60' stroke='%23fff' stroke-width='13' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='82' cy='38' r='8' fill='%23fff'/%3E%3C/svg%3E">
   <style>
-    :root { --fundo: #fff; --superficie: #f7f7f7; --linha: #e4e4e4; --linha-forte: #c9c9c9; --texto: #0a0a0a; --texto-2: #4a4a4a; --texto-3: #6b6b6b; --inverso: #0a0a0a; --inverso-texto: #fff; color-scheme: light; }
-    @media (prefers-color-scheme: dark) {
-      :root { --fundo: #0a0a0a; --superficie: #141414; --linha: #262626; --linha-forte: #3d3d3d; --texto: #f5f5f5; --texto-2: #c4c4c4; --texto-3: #9a9a9a; --inverso: #f5f5f5; --inverso-texto: #0a0a0a; color-scheme: dark; }
-    }
+    :root { --preto: #000; --carvao: #0d0d0d; --linha: #262626; --cinza: #8a8a8a; --cinza-claro: #b8b8b8; --branco: #fff; --mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { background: var(--fundo); color: var(--texto); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    html { background: var(--preto); }
+    body { background: var(--preto); color: var(--branco); font: 17px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, system-ui, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     a { color: inherit; }
-    :focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; border-radius: 4px; }
-    .contido { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
-    header.topo { position: sticky; top: 0; z-index: 10; background: var(--fundo); border-bottom: 1px solid var(--linha); }
-    .barra { display: flex; align-items: center; gap: 20px; height: 60px; }
-    .marca { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; text-decoration: none; }
-    .marca svg { width: 28px; height: 28px; }
-    nav { margin-left: auto; display: flex; gap: 4px; flex-wrap: wrap; }
-    nav a { text-decoration: none; font-size: 14px; font-weight: 600; color: var(--texto-2); padding: 6px 10px; border-radius: 8px; }
-    nav a:hover { color: var(--texto); background: var(--superficie); }
-    .botao { display: inline-flex; align-items: center; justify-content: center; height: 46px; padding: 0 22px; border-radius: 10px; font-weight: 600; font-size: 15px; text-decoration: none; border: 1px solid var(--linha-forte); }
-    .botao.primario { background: var(--inverso); color: var(--inverso-texto); border-color: var(--inverso); }
-    .botao:hover { border-color: var(--texto); }
-    .botao.primario:hover { opacity: 0.88; }
-    .heroi { padding: 72px 0 56px; }
-    .selo { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; border: 1px solid var(--linha-forte); border-radius: 999px; padding: 4px 12px; color: var(--texto-2); margin-bottom: 20px; }
-    h1 { font-size: clamp(34px, 6vw, 58px); line-height: 1.06; letter-spacing: -0.03em; max-width: 15ch; }
-    .sub { font-size: clamp(17px, 2.2vw, 20px); color: var(--texto-2); max-width: 60ch; margin: 20px 0 28px; }
-    .acoes { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-    .nota { font-size: 13px; color: var(--texto-3); margin-top: 14px; }
-    .demo { margin-top: 48px; border: 1px solid var(--linha); border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; }
-    .demo > div { padding: 20px; font: 13.5px/1.7 ui-monospace, "Cascadia Mono", Consolas, monospace; }
-    .demo > div + div { border-left: 1px solid var(--linha); background: var(--superficie); }
-    .demo small { display: block; font: 700 11px/1 system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; color: var(--texto-3); margin-bottom: 12px; }
-    .demo mark { background: var(--inverso); color: var(--inverso-texto); padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
-    section { padding: 64px 0; border-top: 1px solid var(--linha); }
-    h2 { font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.02em; line-height: 1.15; max-width: 22ch; }
-    .lead { color: var(--texto-2); max-width: 62ch; margin-top: 12px; }
-    .grade { display: grid; gap: 16px; margin-top: 32px; }
-    .g3 { grid-template-columns: repeat(3, 1fr); }
-    .g2 { grid-template-columns: repeat(2, 1fr); }
-    .cartao { border: 1px solid var(--linha); border-radius: 12px; padding: 22px; }
-    .cartao h3 { font-size: 17px; margin-bottom: 6px; letter-spacing: -0.01em; }
-    .cartao p, .cartao li { color: var(--texto-2); font-size: 15px; }
-    .numero { font: 700 13px/1 ui-monospace, Consolas, monospace; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: var(--inverso); color: var(--inverso-texto); margin-bottom: 14px; }
-    .areas { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
-    .areas span { border: 1px solid var(--linha-forte); border-radius: 999px; padding: 7px 14px; font-size: 14px; font-weight: 600; }
-    ul.lista { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
-    ul.lista li { padding-left: 22px; position: relative; }
-    ul.lista li::before { content: ""; position: absolute; left: 2px; top: 0.62em; width: 8px; height: 8px; border-radius: 50%; background: var(--texto); }
-    details { border-bottom: 1px solid var(--linha); padding: 16px 0; }
-    details summary { cursor: pointer; font-weight: 600; font-size: 16px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
-    details summary::after { content: "+"; font-weight: 400; font-size: 20px; line-height: 1; }
-    details[open] summary::after { content: "–"; }
-    details summary::-webkit-details-marker { display: none; }
-    details p { color: var(--texto-2); margin-top: 10px; max-width: 70ch; }
-    .faixa { background: var(--inverso); color: var(--inverso-texto); border-top: 0; }
-    .faixa h2 { max-width: 24ch; }
-    .faixa .lead { color: inherit; opacity: 0.75; }
-    .faixa .botao { background: var(--inverso-texto); color: var(--inverso); border-color: var(--inverso-texto); margin-top: 24px; }
-    footer { border-top: 1px solid var(--linha); padding: 28px 0 40px; color: var(--texto-3); font-size: 14px; }
-    footer .contido { display: flex; gap: 16px 28px; flex-wrap: wrap; align-items: center; }
-    footer a { text-decoration: underline; text-underline-offset: 3px; }
-    @media (max-width: 760px) {
-      .g3, .g2, .demo { grid-template-columns: 1fr; }
-      .demo > div + div { border-left: 0; border-top: 1px solid var(--linha); }
-      nav a.opcional { display: none; }
-      .heroi { padding: 48px 0 40px; }
-      section { padding: 48px 0; }
+    :focus-visible { outline: 2px solid var(--branco); outline-offset: 4px; border-radius: 6px; }
+    .contido { width: min(1120px, 100% - 40px); margin-inline: auto; }
+
+    /* ---------- navegação ---------- */
+    .progresso { position: fixed; inset: 0 0 auto 0; height: 2px; background: var(--branco); transform-origin: 0 50%; transform: scaleX(0); z-index: 60; }
+    nav.topo { position: fixed; inset: 0 0 auto 0; z-index: 50; backdrop-filter: saturate(160%) blur(18px); -webkit-backdrop-filter: saturate(160%) blur(18px); background: rgba(0, 0, 0, 0.62); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+    nav.topo .contido { display: flex; align-items: center; height: 52px; gap: 24px; }
+    .marca { display: flex; align-items: center; gap: 9px; font-weight: 700; letter-spacing: -0.01em; text-decoration: none; font-size: 17px; }
+    .marca svg { width: 24px; height: 24px; }
+    nav.topo .links { margin-left: auto; display: flex; gap: 22px; font-size: 13px; color: var(--cinza-claro); }
+    nav.topo .links a { text-decoration: none; transition: color 0.2s; }
+    nav.topo .links a:hover { color: var(--branco); }
+    .pilula { display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border-radius: 999px; background: var(--branco); color: var(--preto); font-size: 13px; font-weight: 600; text-decoration: none; transition: transform 0.2s; }
+    .pilula:hover { transform: scale(1.04); }
+
+    /* ---------- herói ---------- */
+    .heroi { position: relative; min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 110px 0 80px; overflow: hidden; }
+    .demo { opacity: 0; animation: aparecer 1.1s 1.1s forwards; }
+    .final .acoes { justify-content: center; }
+    .grade-fundo { position: absolute; inset: -2px; background-image: linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px); background-size: 56px 56px; -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 75%); mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 75%); animation: deslizar 22s linear infinite; }
+    @keyframes deslizar { to { background-position: 56px 56px; } }
+    .holofote { position: absolute; inset: 0; background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 38%), rgba(255, 255, 255, 0.13), transparent 62%); pointer-events: none; transition: background 0.2s; }
+    .heroi-conteudo { position: relative; will-change: transform, opacity; }
+    .logo-grande { width: 64px; height: 64px; margin: 0 0 30px; display: block; }
+    .logo-grande .traco { stroke-dasharray: 190; stroke-dashoffset: 190; animation: tracar 1.3s 0.25s cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+    .logo-grande .ponto { transform-origin: 82px 38px; transform: scale(0); animation: surgir 0.5s 1.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+    @keyframes tracar { to { stroke-dashoffset: 0; } }
+    @keyframes surgir { to { transform: scale(1); } }
+    h1 { font-size: clamp(42px, 6.3vw, 88px); line-height: 0.98; letter-spacing: -0.045em; font-weight: 700; }
+    h1 .palavra { display: inline-block; opacity: 0; transform: translateY(0.5em) rotate(4deg); filter: blur(10px); animation: entrar 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: calc(0.5s + var(--i) * 0.09s); }
+    h1 .fraco { color: var(--cinza); }
+    @keyframes entrar { to { opacity: 1; transform: none; filter: none; } }
+    .sub { max-width: 30em; margin: 26px 0 0; font-size: clamp(17px, 1.7vw, 21px); color: var(--cinza-claro); opacity: 0; animation: aparecer 1s 1.5s forwards; }
+    .sub strong { color: var(--branco); font-weight: 600; }
+    .acoes { margin-top: 34px; display: flex; gap: 12px; flex-wrap: wrap; opacity: 0; animation: aparecer 1s 1.75s forwards; }
+    @keyframes aparecer { to { opacity: 1; } }
+    .botao { display: inline-flex; align-items: center; justify-content: center; height: 52px; padding: 0 28px; border-radius: 999px; font-weight: 600; font-size: 16px; text-decoration: none; border: 1px solid rgba(255, 255, 255, 0.28); transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1), background 0.25s, color 0.25s; }
+    .botao:hover { transform: scale(1.04); background: rgba(255, 255, 255, 0.08); }
+    .botao.cheio { background: var(--branco); color: var(--preto); border-color: var(--branco); }
+    .botao.cheio:hover { background: var(--branco); box-shadow: 0 0 48px rgba(255, 255, 255, 0.35); }
+    .rolar { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); width: 24px; height: 38px; border: 1.5px solid rgba(255,255,255,0.35); border-radius: 14px; opacity: 0; animation: aparecer 1s 2.4s forwards; }
+    .rolar::after { content: ""; position: absolute; left: 50%; top: 7px; width: 3px; height: 7px; margin-left: -1.5px; border-radius: 2px; background: var(--branco); animation: roda 1.8s infinite; }
+    @keyframes roda { 0% { transform: translateY(0); opacity: 1; } 70% { transform: translateY(12px); opacity: 0; } 100% { opacity: 0; } }
+
+    /* ---------- cenas presas à rolagem ---------- */
+    .cena { position: relative; }
+    .palco { position: sticky; top: 0; height: 100vh; height: 100svh; display: flex; align-items: center; overflow: hidden; }
+    .rotulo { font: 600 12px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--cinza); margin-bottom: 18px; }
+    h2 { font-size: clamp(34px, 5.6vw, 72px); line-height: 1.02; letter-spacing: -0.04em; font-weight: 700; }
+
+    /* demonstração do mascaramento (roda sozinha) */
+    .duas { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 56px; align-items: center; }
+    .placar { margin-top: 22px; display: flex; align-items: center; gap: 14px; color: var(--cinza-claro); font-size: 15px; line-height: 1.35; }
+    .placar b { font: 700 clamp(44px, 5vw, 68px)/1 var(--mono); color: var(--branco); letter-spacing: -0.05em; min-width: 1.1ch; }
+    .legenda { margin-top: 18px; color: var(--cinza); font-size: 15px; max-width: 30em; }
+    .folha { background: var(--carvao); border: 1px solid var(--linha); border-radius: 20px; padding: 30px; font: 15.5px/2.15 var(--mono); color: #d6d6d6; box-shadow: 0 40px 120px rgba(255, 255, 255, 0.05); position: relative; }
+    .folha::before { content: "contrato.pdf"; position: absolute; top: -13px; left: 24px; background: var(--preto); border: 1px solid var(--linha); border-radius: 999px; padding: 2px 12px; font-size: 11.5px; line-height: 1.7; color: var(--cinza); }
+    .pii { white-space: nowrap; color: var(--branco); border-bottom: 1px dashed #666; transition: background 0.35s, color 0.35s, padding 0.35s, border-color 0.35s; border-radius: 5px; }
+    .pii.on { background: var(--branco); color: var(--preto); padding: 2px 7px; border-color: transparent; font-weight: 600; }
+    .destino { margin-top: 20px; display: flex; align-items: center; gap: 10px; font: 12.5px/1 var(--mono); color: var(--cinza); }
+    .destino i { flex: 1; height: 1px; background: linear-gradient(90deg, var(--linha), var(--branco)); transform-origin: 0 50%; transform: scaleX(var(--envio, 0)); transition: transform 1s cubic-bezier(0.65, 0, 0.35, 1); }
+    .destino span { transition: color 0.4s; }
+    .destino.pronto span { color: var(--branco); }
+
+    /* manifesto: acende palavra a palavra ao aparecer */
+    .manifesto { font-size: clamp(28px, 4.6vw, 62px); line-height: 1.12; letter-spacing: -0.035em; font-weight: 700; max-width: 18em; }
+    .manifesto span { opacity: 0.14; transition: opacity 0.5s; }
+    .manifesto span.aceso { opacity: 1; }
+
+    /* três passos: alternam sozinhos */
+    .lista-passos { display: flex; flex-direction: column; gap: 26px; margin-top: 34px; }
+    .passo { border-left: 2px solid var(--linha); padding-left: 20px; opacity: 0.32; transition: opacity 0.4s, border-color 0.4s; cursor: pointer; }
+    .passo:hover { opacity: 0.7; }
+    .passo.ativo { opacity: 1; border-color: var(--branco); }
+    .passo h3 { font-size: clamp(20px, 2.4vw, 28px); letter-spacing: -0.02em; }
+    .passo p { color: var(--cinza-claro); font-size: 15.5px; max-width: 26em; max-height: 0; overflow: hidden; transition: max-height 0.5s, margin 0.5s; }
+    .passo.ativo p { max-height: 8em; margin-top: 6px; }
+    .aparelho { position: relative; height: min(560px, 68vh); border: 1px solid var(--linha); border-radius: 24px; background: var(--carvao); overflow: hidden; box-shadow: 0 40px 120px rgba(255, 255, 255, 0.05); }
+    .aparelho .barra { display: flex; align-items: center; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--linha); font-size: 13px; font-weight: 600; }
+    .aparelho .barra svg { width: 18px; height: 18px; }
+    .aparelho .barra em { margin-left: auto; font: normal 600 11px/1 var(--mono); border: 1px solid var(--linha); border-radius: 999px; padding: 5px 9px; color: var(--cinza-claro); }
+    .tela { position: absolute; inset: 49px 0 0 0; padding: 20px; display: flex; flex-direction: column; gap: 10px; opacity: 0; transform: translateY(18px) scale(0.985); transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
+    .tela.ativa { opacity: 1; transform: none; }
+    .item { display: flex; align-items: center; gap: 12px; border: 1px solid var(--linha); border-radius: 12px; padding: 12px 14px; font-size: 14px; opacity: 0; transform: translateX(-14px); transition: opacity 0.45s, transform 0.45s; transition-delay: calc(var(--i, 0) * 0.09s + 0.15s); }
+    .tela.ativa .item { opacity: 1; transform: none; }
+    .item small { margin-left: auto; color: var(--cinza); font: 11.5px/1 var(--mono); white-space: nowrap; }
+    .item .ficha { font: 600 12px/1 var(--mono); background: var(--branco); color: var(--preto); border-radius: 5px; padding: 5px 7px; white-space: nowrap; }
+    .item .tipo { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--linha); display: grid; place-items: center; font: 600 9.5px/1 var(--mono); color: var(--cinza-claro); flex: none; }
+    .bolha { align-self: flex-end; background: var(--branco); color: var(--preto); border-radius: 16px 16px 4px 16px; padding: 9px 14px; font-size: 14px; font-weight: 500; }
+    .chip { align-self: flex-start; font: 12px/1 var(--mono); color: var(--cinza-claro); border: 1px solid var(--linha); border-radius: 999px; padding: 6px 11px; }
+    .resposta { font-size: 14.5px; line-height: 1.6; color: #e2e2e2; white-space: pre-wrap; min-height: 9em; }
+    .resposta::after { content: "▍"; animation: piscar 1s steps(1) infinite; }
+    @keyframes piscar { 50% { opacity: 0; } }
+
+    /* ---------- seções comuns ---------- */
+    section.bloco { padding: clamp(90px, 14vw, 170px) 0; position: relative; }
+    .revelar { opacity: 0; transform: translateY(42px); filter: blur(6px); transition: opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.9s; transition-delay: calc(var(--i, 0) * 0.07s); }
+    .revelar.visto { opacity: 1; transform: none; filter: none; }
+    .lead { color: var(--cinza-claro); font-size: clamp(17px, 2vw, 21px); max-width: 34em; margin-top: 20px; }
+
+    /* faixa de áreas */
+    .esteira { overflow: hidden; margin-top: 60px; -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+    .trilho { display: flex; gap: 0.5em; width: max-content; font-size: clamp(40px, 8vw, 104px); font-weight: 700; letter-spacing: -0.04em; line-height: 1.12; white-space: nowrap; animation: correr 46s linear infinite; }
+    .trilho.volta { animation-direction: reverse; animation-duration: 58s; color: transparent; -webkit-text-stroke: 1.2px rgba(255, 255, 255, 0.55); }
+    .trilho span::after { content: "·"; margin-left: 0.5em; color: var(--cinza); -webkit-text-stroke: 0; }
+    @keyframes correr { to { transform: translateX(-50%); } }
+
+    /* números */
+    .numeros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--linha); border: 1px solid var(--linha); border-radius: 24px; overflow: hidden; margin-top: 64px; }
+    .numeros div { background: var(--preto); padding: 38px 26px; }
+    .numeros b { display: block; font: 700 clamp(48px, 7vw, 96px)/1 var(--mono); letter-spacing: -0.06em; }
+    .numeros span { display: block; margin-top: 12px; color: var(--cinza-claro); font-size: 15px; }
+
+    /* consultas */
+    .grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 56px; }
+    .cartao { border: 1px solid var(--linha); border-radius: 20px; padding: 26px; background: linear-gradient(180deg, #0f0f0f, #060606); position: relative; overflow: hidden; transition: border-color 0.3s, transform 0.3s; }
+    .cartao:hover { border-color: rgba(255, 255, 255, 0.5); transform: translateY(-4px); }
+    .cartao::before { content: ""; position: absolute; inset: 0; background: radial-gradient(260px circle at var(--cx, 50%) var(--cy, 0%), rgba(255, 255, 255, 0.12), transparent 70%); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .cartao:hover::before { opacity: 1; }
+    .cartao h3 { font-size: 19px; letter-spacing: -0.02em; margin-bottom: 12px; }
+    .cartao ul { list-style: none; display: flex; flex-direction: column; gap: 7px; color: var(--cinza-claro); font-size: 15px; }
+    .cartao li::before { content: "✓"; margin-right: 9px; color: var(--branco); font-weight: 700; }
+
+    /* privacidade (seção clara) */
+    .claro { background: var(--branco); color: var(--preto); }
+    .claro .rotulo { color: #6b6b6b; }
+    .claro .lead { color: #4a4a4a; }
+    .quatro { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0; margin-top: 60px; border-top: 1px solid #dcdcdc; }
+    .quatro div { padding: 34px 28px 34px 0; border-bottom: 1px solid #dcdcdc; }
+    .quatro div:nth-child(odd) { border-right: 1px solid #dcdcdc; }
+    .quatro div:nth-child(even) { padding-left: 28px; }
+    .quatro h3 { font-size: clamp(22px, 2.6vw, 30px); letter-spacing: -0.03em; line-height: 1.12; }
+    .quatro p { color: #4a4a4a; margin-top: 10px; max-width: 28em; }
+    .claro a.sub-link { display: inline-block; margin-top: 40px; font-weight: 600; text-underline-offset: 4px; }
+
+    /* dúvidas */
+    details { border-bottom: 1px solid var(--linha); padding: 22px 0; }
+    summary { cursor: pointer; font-size: clamp(18px, 2.2vw, 24px); font-weight: 600; letter-spacing: -0.02em; list-style: none; display: flex; justify-content: space-between; gap: 20px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; font-weight: 300; font-size: 1.3em; line-height: 0.9; transition: transform 0.3s; }
+    details[open] summary::after { transform: rotate(45deg); }
+    details p { color: var(--cinza-claro); margin-top: 12px; max-width: 44em; }
+
+    /* chamada final */
+    .final { text-align: center; padding: clamp(110px, 18vw, 220px) 0; position: relative; overflow: hidden; }
+    .final::before { content: ""; position: absolute; left: 50%; top: 50%; width: 900px; height: 900px; margin: -450px 0 0 -450px; background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 62%); animation: pulsar 6s ease-in-out infinite; }
+    @keyframes pulsar { 50% { transform: scale(1.18); opacity: 0.6; } }
+    .final > * { position: relative; }
+    .final h2 { font-size: clamp(42px, 8vw, 104px); }
+    footer { border-top: 1px solid var(--linha); padding: 30px 0 44px; color: var(--cinza); font-size: 13.5px; }
+    footer .contido { display: flex; gap: 14px 28px; flex-wrap: wrap; }
+    footer a { text-underline-offset: 3px; }
+
+    @media (max-width: 860px) {
+      nav.topo .links a.opc { display: none; }
+      .duas { grid-template-columns: 1fr; gap: 26px; }
+      .folha { padding: 22px 18px 18px; font-size: 12.5px; line-height: 2; border-radius: 16px; }
+      .heroi { padding: 96px 0 70px; }
+      .lista-passos { gap: 14px; margin-top: 22px; }
+      .aparelho { height: 420px; }
+      .numeros { grid-template-columns: repeat(2, 1fr); }
+      .grade { grid-template-columns: 1fr; }
+      .quatro { grid-template-columns: 1fr; }
+      .quatro div, .quatro div:nth-child(even) { padding: 26px 0; border-right: 0 !important; }
     }
-    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+    /* movimento reduzido: tudo visível, sem cenas presas */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      h1 .palavra, .sub, .acoes, .demo, .revelar { opacity: 1; transform: none; filter: none; }
+      .logo-grande .traco { stroke-dashoffset: 0; } .logo-grande .ponto { transform: none; }
+      .cena { height: auto !important; padding: 90px 0; } .palco { position: static; height: auto; }
+      .manifesto span { opacity: 1; } .passo { opacity: 1; } .passo p { max-height: none; margin-top: 6px; }
+      .rolar { display: none; }
+    }
   </style>
 </head>
 <body>
-  <header class="topo">
-    <div class="contido barra">
-      <a class="marca" href="/" aria-label="Nexpra, página inicial">
-        <svg viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="currentColor"/><path d="M42 90 V40 L82 88 V60" stroke="var(--fundo)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="var(--fundo)"/></svg>
+  <div class="progresso" id="progresso" aria-hidden="true"></div>
+
+  <nav class="topo" aria-label="Navegação principal">
+    <div class="contido">
+      <a class="marca" href="#inicio" aria-label="Nexpra, início">
+        <svg viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="#fff"/><path d="M42 90 V40 L82 88 V60" stroke="#000" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="#000"/></svg>
         Nexpra
       </a>
-      <nav aria-label="Seções">
-        <a class="opcional" href="#como-funciona">Como funciona</a>
-        <a class="opcional" href="#areas">Áreas</a>
-        <a class="opcional" href="#consultas">Consultas</a>
+      <div class="links">
+        <a class="opc" href="#passos">Como funciona</a>
+        <a class="opc" href="#areas">Áreas</a>
+        <a class="opc" href="#consultas">Consultas</a>
         <a href="#privacidade">Privacidade</a>
-        <a href="#duvidas">Dúvidas</a>
-      </nav>
+      </div>
+      <!-- Os botões levam ao formulário /acesso. Quando a extensão for publicada, troque por o endereço da Chrome Web Store e os textos por "Instalar no Chrome". -->
+      <a class="pilula" href="/acesso">Pedir acesso</a>
     </div>
-  </header>
+  </nav>
 
   <main>
-    <div class="contido heroi">
-      <span class="selo">Extensão para o Google Chrome</span>
-      <h1>Use IA no trabalho sem expor os dados de ninguém.</h1>
-      <p class="sub">O Nexpra mascara nomes, CPF, endereços e outros dados pessoais <strong>no seu computador</strong>, antes de o documento chegar à inteligência artificial. A resposta volta com os dados reais só na sua tela.</p>
-      <div class="acoes">
-        <!-- Quando a extensão for publicada, troque o href pelo link da Chrome Web Store e o texto por "Instalar no Chrome". -->
-        <a class="botao primario" id="instalar" href="mailto:contato@nexpra.com.br?subject=Quero%20testar%20o%20Nexpra">Pedir acesso antecipado</a>
-        <a class="botao" href="#como-funciona">Ver como funciona</a>
-      </div>
-      <p class="nota">Em breve na Chrome Web Store. Funciona com a sua própria chave do Google Gemini, Anthropic Claude ou OpenAI.</p>
-
-      <div class="demo" aria-label="Exemplo de pseudonimização">
+    <header class="heroi" id="inicio">
+      <div class="grade-fundo" aria-hidden="true"></div>
+      <div class="holofote" id="holofote" aria-hidden="true"></div>
+      <div class="heroi-conteudo contido duas" id="heroi-conteudo">
         <div>
-          <small>O seu documento</small>
-          A contratante <strong>Mariana Albuquerque Teixeira</strong>, CPF <strong>123.456.789-10</strong>, residente na <strong>Rua das Acácias, 245</strong>, telefone <strong>(85) 99812-3456</strong>…
+          <svg class="logo-grande" viewBox="0 0 128 128" aria-hidden="true">
+            <rect x="4" y="4" width="120" height="120" rx="26" fill="#fff"/>
+            <path class="traco" d="M42 90 V40 L82 88 V60" stroke="#000" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle class="ponto" cx="82" cy="38" r="8" fill="#000"/>
+          </svg>
+          <h1 id="titulo" aria-label="IA no trabalho. Sem expor ninguém.">IA no trabalho. <span class="fraco">Sem expor ninguém.</span></h1>
+          <p class="sub">O Nexpra mascara nomes, CPF e endereços <strong>no seu computador</strong>, antes de o documento chegar à inteligência artificial.</p>
+          <div class="acoes">
+            <a class="botao cheio" href="/acesso">Pedir acesso antecipado</a>
+            <a class="botao" href="#passos">Como funciona</a>
+          </div>
         </div>
-        <div>
-          <small>O que a IA recebe</small>
-          A contratante <mark>[PESSOA_1]</mark>, CPF <mark>[CPF_1]</mark>, residente na <mark>[ENDERECO_1]</mark>, telefone <mark>[TELEFONE_1]</mark>…
+        <!-- Demonstração ao vivo: roda sozinha, em ciclo, sem depender da rolagem. -->
+        <div class="demo" id="mascarar" aria-label="Demonstração: os dados pessoais de um contrato fictício são trocados por marcadores">
+          <div class="folha" id="folha">
+            A contratante <span class="pii" data-token="[PESSOA_1]">Mariana Albuquerque Teixeira</span>, inscrita no CPF <span class="pii" data-token="[CPF_1]">123.456.789-10</span>, residente na <span class="pii" data-token="[ENDERECO_1]">Rua das Acácias, 245</span>, telefone <span class="pii" data-token="[TELEFONE_1]">(85) 99812-3456</span>, e-mail <span class="pii" data-token="[EMAIL_1]">mariana@exemplo.com.br</span>, contrata <span class="pii" data-token="[PESSOA_2]">Rodrigo Menezes Barbosa</span> para consultoria financeira pelo valor mensal de R$ 8.500,00.
+          </div>
+          <div class="destino" id="destino"><span>seu computador</span><i></i><span>IA</span></div>
+          <div class="placar"><b id="contador">0</b><span id="legenda-placar">dados pessoais protegidos<br>antes de qualquer envio</span></div>
         </div>
       </div>
-      <p class="nota">Exemplo com dados fictícios.</p>
-    </div>
+      <div class="rolar" aria-hidden="true"></div>
+    </header>
 
-    <section id="como-funciona">
+    <!-- Manifesto: acende sozinho ao aparecer na tela -->
+    <section class="bloco" id="manifesto" aria-label="Como a resposta volta">
       <div class="contido">
-        <h2>Três passos, sem sair do navegador.</h2>
-        <div class="grade g3">
-          <div class="cartao"><span class="numero">1</span><h3>Carregue o material</h3><p>PDF (inclusive digitalizado, com leitura de texto local), Word, imagens, XML de nota fiscal, planilha em CSV, a página aberta ou um processo do PJe.</p></div>
-          <div class="cartao"><span class="numero">2</span><h3>Revise a proteção</h3><p>O Nexpra troca os dados pessoais por marcadores como [PESSOA_1]. Você vê item a item o que foi mascarado e exatamente o texto que a IA vai ler.</p></div>
-          <div class="cartao"><span class="numero">3</span><h3>Peça o trabalho</h3><p>Escolha uma funcionalidade pronta da sua área ou converse livremente. A resposta aparece com os dados reais e pode ir direto para o Word.</p></div>
+        <p class="manifesto" id="texto-manifesto">A IA trabalha com os marcadores. A resposta volta com os dados reais só na sua tela. Sem servidor, sem conta, sem rastro: fechou o painel, apagou.</p>
+      </div>
+    </section>
+
+    <!-- Três passos: alternam sozinhos; clicar num passo salta para ele -->
+    <section class="bloco" id="passos" aria-label="Como funciona">
+        <div class="contido duas">
+          <div>
+            <p class="rotulo">Como funciona</p>
+            <h2>Três passos.<br>Um painel.</h2>
+            <div class="lista-passos">
+              <div class="passo ativo" role="button" tabindex="0"><h3>1. Carregue o material</h3><p>PDF, inclusive digitalizado, Word, imagens, nota fiscal em XML, a página aberta ou um processo do PJe.</p></div>
+              <div class="passo" role="button" tabindex="0"><h3>2. Revise a proteção</h3><p>Veja item a item o que foi mascarado e exatamente o texto que a IA vai ler.</p></div>
+              <div class="passo" role="button" tabindex="0"><h3>3. Peça o trabalho</h3><p>Escolha uma funcionalidade da sua área. A IA consulta fontes oficiais, e você vê cada consulta.</p></div>
+            </div>
+          </div>
+          <div class="aparelho" aria-hidden="true">
+            <div class="barra">
+              <svg viewBox="0 0 128 128"><rect x="4" y="4" width="120" height="120" rx="26" fill="#fff"/><path d="M42 90 V40 L82 88 V60" stroke="#000" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" fill="none"/><circle cx="82" cy="38" r="8" fill="#000"/></svg>
+              Nexpra <em id="aba-aparelho">Fontes</em>
+            </div>
+            <div class="tela ativa">
+              <div class="item" style="--i:0"><span class="tipo">PDF</span>contrato.pdf<small>texto nativo</small></div>
+              <div class="item" style="--i:1"><span class="tipo">OCR</span>procuracao-digitalizada.pdf<small>lido localmente</small></div>
+              <div class="item" style="--i:2"><span class="tipo">XML</span>nota-fiscal.xml<small>resumo da NF-e</small></div>
+              <div class="item" style="--i:3"><span class="tipo">PJe</span>Processo importado<small>42 documentos</small></div>
+            </div>
+            <div class="tela">
+              <div class="item" style="--i:0"><span class="ficha">[PESSOA_1]</span>Mariana Albuquerque Teixeira<small>3×</small></div>
+              <div class="item" style="--i:1"><span class="ficha">[CPF_1]</span>123.456.789-10<small>2×</small></div>
+              <div class="item" style="--i:2"><span class="ficha">[ENDERECO_1]</span>Rua das Acácias, 245<small>1×</small></div>
+              <div class="item" style="--i:3"><span class="ficha">[TELEFONE_1]</span>(85) 99812-3456<small>1×</small></div>
+              <div class="item" style="--i:4"><span class="ficha">[PARTE AUTORA]</span>parte do processo<small>18×</small></div>
+            </div>
+            <div class="tela">
+              <div class="bolha">Analise os riscos deste contrato</div>
+              <div class="chip">✓ Consultou: CNPJ da contratada</div>
+              <div class="chip">✓ Consultou: correção pelo IPCA</div>
+              <div class="resposta" id="resposta"></div>
+            </div>
+          </div>
+        </div>
+    </section>
+
+    <section class="bloco" id="areas">
+      <div class="contido">
+        <p class="rotulo revelar">14 áreas profissionais</p>
+        <h2 class="revelar" style="--i:1">Pronto para<br>a sua profissão.</h2>
+        <p class="lead revelar" style="--i:2">Cada área traz funcionalidades prontas, regras de conduta próprias e as consultas que fazem sentido para ela.</p>
+      </div>
+      <div class="esteira" aria-hidden="true">
+        <div class="trilho"><span>Jurídico</span><span>Saúde</span><span>Contabilidade</span><span>Psicologia</span><span>Engenharia</span><span>Imobiliário</span><span>Educação</span><span>Jurídico</span><span>Saúde</span><span>Contabilidade</span><span>Psicologia</span><span>Engenharia</span><span>Imobiliário</span><span>Educação</span></div>
+        <div class="trilho volta"><span>Seguros</span><span>Finanças</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>RH</span><span>Uso geral</span><span>Seguros</span><span>Finanças</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>RH</span><span>Uso geral</span></div>
+      </div>
+      <p class="contido" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Áreas: jurídico, contabilidade, saúde, psicologia, engenharia e arquitetura, imobiliário, seguros, finanças e investimentos, educação, contratações públicas, serviço social, cartórios, RH e departamento pessoal, uso geral.</p>
+      <div class="contido">
+        <div class="numeros">
+          <div class="revelar" style="--i:0"><b data-alvo="14">0</b><span>áreas profissionais</span></div>
+          <div class="revelar" style="--i:1"><b data-alvo="32">0</b><span>consultas a fontes públicas</span></div>
+          <div class="revelar" style="--i:2"><b data-alvo="25">0</b><span>tipos de dado protegidos</span></div>
+          <div class="revelar" style="--i:3"><b data-alvo="0">0</b><span>servidores do Nexpra no caminho</span></div>
         </div>
       </div>
     </section>
 
-    <section id="areas">
+    <section class="bloco" id="consultas">
       <div class="contido">
-        <h2>Funcionalidades prontas para a sua profissão.</h2>
-        <p class="lead">Cada área traz tarefas prontas, regras de conduta próprias e as consultas que fazem sentido para ela. Você também pode criar as suas.</p>
-        <div class="areas">
-          <span>Jurídico</span><span>Contabilidade</span><span>Saúde</span><span>Psicologia</span><span>Engenharia e arquitetura</span><span>Imobiliário</span><span>Seguros</span><span>Finanças e investimentos</span><span>Educação</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>RH e departamento pessoal</span><span>Uso geral</span>
-        </div>
-        <div class="grade g3">
-          <div class="cartao"><h3>Jurídico</h3><p>Resumo do caso, linha do tempo, análise de contrato, minutas de peças, prazos calculados e explicação ao cliente.</p></div>
-          <div class="cartao"><h3>Saúde e psicologia</h3><p>Resumo clínico, relatórios e laudos, registro de sessão, revisão de evidências e orientações em linguagem simples.</p></div>
-          <div class="cartao"><h3>Contabilidade</h3><p>Análise de demonstrações, comparativo de regimes, conferência de nota fiscal e parecer fiscal.</p></div>
-          <div class="cartao"><h3>Contratações públicas</h3><p>Estudo técnico preliminar, termo de referência, pesquisa no PNCP, análise de edital e conferência de habilitação.</p></div>
-          <div class="cartao"><h3>Educação</h3><p>Plano de aula alinhado à BNCC, avaliações com gabarito, parecer descritivo e comunicados às famílias.</p></div>
-          <div class="cartao"><h3>Imobiliário e seguros</h3><p>Comparação de financiamento por banco, reajuste de aluguel, análise de apólice e Tabela FIPE.</p></div>
+        <p class="rotulo revelar">Fontes oficiais</p>
+        <h2 class="revelar" style="--i:1">A IA consulta.<br>Você vê cada consulta.</h2>
+        <p class="lead revelar" style="--i:2">Prazos e correções são calculados por código, não "de cabeça" pela IA. As consultas também funcionam sozinhas, sem chave de IA.</p>
+        <div class="grade">
+          <div class="cartao revelar" style="--i:0"><h3>Leis e processos</h3><ul><li>Texto de lei federal por artigo</li><li>Processos no DataJud</li><li>Prazos em dias úteis</li></ul></div>
+          <div class="cartao revelar" style="--i:1"><h3>Compras públicas</h3><ul><li>Licitações no PNCP</li><li>Certidão do TCU por CNPJ</li><li>Diários oficiais municipais</li></ul></div>
+          <div class="cartao revelar" style="--i:2"><h3>Empresas e tributos</h3><ul><li>CNPJ, CNAE e NCM</li><li>Reforma Tributária por NCM</li><li>Sanções CEIS e CNEP</li></ul></div>
+          <div class="cartao revelar" style="--i:3"><h3>Índices e juros</h3><ul><li>IPCA, IGP-M, SELIC, INCC</li><li>Taxas de juros por banco</li><li>Expectativas do mercado</li></ul></div>
+          <div class="cartao revelar" style="--i:4"><h3>Saúde e ciência</h3><ul><li>PubMed e ensaios clínicos</li><li>Bulas e eventos adversos</li><li>Alerta de dengue por cidade</li></ul></div>
+          <div class="cartao revelar" style="--i:5"><h3>Obras, imóveis, veículos</h3><ul><li>Custo de construção por m²</li><li>Clima histórico</li><li>Tabela FIPE</li></ul></div>
         </div>
       </div>
     </section>
 
-    <section id="consultas">
+    <section class="bloco claro" id="privacidade">
       <div class="contido">
-        <h2>A IA consulta fontes oficiais, e você vê cada consulta.</h2>
-        <p class="lead">São 32 consultas a fontes públicas e cálculos feitos por código, não "de cabeça" pela IA. Também funcionam sozinhas, sem chave de IA.</p>
-        <div class="grade g2">
-          <div class="cartao"><h3>Leis, processos e compras públicas</h3><ul class="lista"><li>Texto de lei federal por artigo</li><li>Processos no DataJud (CNJ)</li><li>Licitações no PNCP e certidão do TCU</li><li>Cálculo de prazos em dias úteis</li></ul></div>
-          <div class="cartao"><h3>Empresas, índices e tributos</h3><ul class="lista"><li>CNPJ, CNAE, NCM e CEP</li><li>Correção monetária por IPCA, IGP-M, SELIC, INCC</li><li>Taxas de juros por banco e expectativas do mercado</li><li>Reforma Tributária por NCM</li></ul></div>
-          <div class="cartao"><h3>Saúde e ciência</h3><ul class="lista"><li>PubMed, Europe PMC e ensaios clínicos</li><li>Bulas e eventos adversos (FDA)</li><li>Alerta de dengue, zika e chikungunya</li><li>Verificação de referências citadas</li></ul></div>
-          <div class="cartao"><h3>Obras, imóveis e veículos</h3><ul class="lista"><li>Custo de construção por m² (SINAPI)</li><li>Clima histórico por cidade</li><li>Tabela FIPE</li><li>Habilidades da BNCC</li></ul></div>
+        <p class="rotulo revelar">Privacidade</p>
+        <h2 class="revelar" style="--i:1">Dá para conferir.</h2>
+        <p class="lead revelar" style="--i:2">A proteção não é uma promessa escondida: você vê o que foi mascarado e o que sai do seu computador.</p>
+        <div class="quatro">
+          <div class="revelar" style="--i:0"><h3>Sem servidor do Nexpra.</h3><p>Não há conta, rastreamento nem anúncios. Documentos e conversas ficam na memória do painel.</p></div>
+          <div class="revelar" style="--i:1"><h3>Proteção sem IA.</h3><p>A troca por marcadores é feita por regras e dicionário, no seu computador. Nada é enviado para "descobrir" nomes.</p></div>
+          <div class="revelar" style="--i:2"><h3>Última verificação.</h3><p>Se um CPF, cartão SUS ou cartão de pagamento válido estiver prestes a sair, o Nexpra bloqueia ou pede a sua confirmação.</p></div>
+          <div class="revelar" style="--i:3"><h3>Você escolhe a IA.</h3><p>Use a sua própria chave do Google Gemini, Anthropic Claude ou OpenAI. Ela fica só no seu navegador.</p></div>
+        </div>
+        <a class="sub-link revelar" href="/privacidade">Ler a política de privacidade completa →</a>
+      </div>
+    </section>
+
+    <section class="bloco" id="duvidas">
+      <div class="contido">
+        <p class="rotulo revelar">Dúvidas</p>
+        <h2 class="revelar" style="--i:1">Antes de instalar.</h2>
+        <div style="margin-top:44px">
+          <details class="revelar"><summary>Preciso pagar pela IA?</summary><p>O Nexpra usa a chave de API que você cria no provedor de sua escolha, e o consumo é cobrado por ele. A proteção de dados e as consultas a fontes públicas funcionam sem nenhuma chave.</p></details>
+          <details class="revelar"><summary>A proteção é infalível?</summary><p>Não. Documentos com dígito verificador, como CPF, CNPJ e cartão SUS, são reconhecidos com alta precisão; nomes de pessoas são detectados por dicionário e por contexto, e podem escapar. Por isso existe a tela de revisão, em que você confere e ajusta o que será mascarado antes de enviar.</p></details>
+          <details class="revelar"><summary>O que sai do meu computador?</summary><p>O texto que você decide enviar à IA, já com os marcadores no lugar dos dados pessoais, e os parâmetros das consultas a fontes públicas, como um CNPJ ou o número de uma lei. A tela mostra o que cada consulta envia.</p></details>
+          <details class="revelar"><summary>Funciona com o PJe?</summary><p>Sim. Em tribunais que usam o PJe, o Nexpra importa o processo aberto usando a sessão que você já tem, e as partes são mascaradas pelo papel processual, como [PARTE AUTORA].</p></details>
+          <details class="revelar"><summary>O Nexpra substitui o profissional?</summary><p>Não. É uma ferramenta de apoio: a revisão e a responsabilidade técnica pelo conteúdo são de quem o utiliza.</p></details>
         </div>
       </div>
     </section>
 
-    <section id="privacidade">
-      <div class="contido">
-        <h2>Privacidade que dá para conferir.</h2>
-        <div class="grade g2">
-          <div class="cartao"><h3>Sem servidor do Nexpra</h3><p>Não há conta, rastreamento nem anúncios. Seus documentos e conversas ficam na memória do painel: fechou, apagou.</p></div>
-          <div class="cartao"><h3>Proteção sem IA</h3><p>A troca dos dados pessoais por marcadores é feita por regras e dicionário, no seu computador. Nenhum trecho é enviado a um modelo para "descobrir" nomes.</p></div>
-          <div class="cartao"><h3>Última verificação antes do envio</h3><p>Se um CPF, cartão SUS ou cartão de pagamento válido estiver prestes a sair, o Nexpra bloqueia ou pede a sua confirmação.</p></div>
-          <div class="cartao"><h3>Você escolhe a IA</h3><p>O Nexpra usa a sua própria chave do Google Gemini, Anthropic Claude ou OpenAI. A chave fica só no seu navegador.</p></div>
-        </div>
-        <p class="lead" style="margin-top:24px">Leia a <a href="/privacidade">política de privacidade</a> completa.</p>
-      </div>
-    </section>
-
-    <section id="duvidas">
-      <div class="contido">
-        <h2>Dúvidas frequentes</h2>
-        <div style="margin-top:20px">
-          <details><summary>Preciso pagar pela IA?</summary><p>O Nexpra usa a chave de API que você cria no provedor de sua escolha, e o consumo é cobrado por ele. A proteção de dados e as consultas a fontes públicas funcionam sem nenhuma chave.</p></details>
-          <details><summary>A proteção é infalível?</summary><p>Não. Documentos com dígito verificador (CPF, CNPJ, cartão SUS) são reconhecidos com alta precisão; nomes de pessoas são detectados por dicionário e por contexto, e podem escapar. Por isso existe a tela de revisão, em que você confere e ajusta o que será mascarado antes de enviar.</p></details>
-          <details><summary>O que sai do meu computador?</summary><p>O texto que você decide enviar à IA, já com os marcadores no lugar dos dados pessoais, e os parâmetros das consultas a fontes públicas (por exemplo, um CNPJ ou o número de uma lei). A tela mostra o que cada consulta envia.</p></details>
-          <details><summary>Funciona com o PJe?</summary><p>Sim. Em tribunais que usam o PJe, o Nexpra importa o processo aberto usando a sessão que você já tem, e as partes são mascaradas pelo papel processual, como [PARTE AUTORA].</p></details>
-          <details><summary>O Nexpra substitui o profissional?</summary><p>Não. É uma ferramenta de apoio: a revisão e a responsabilidade técnica pelo conteúdo são de quem o utiliza.</p></details>
-        </div>
-      </div>
-    </section>
-
-    <section class="faixa">
-      <div class="contido">
-        <h2>Quer testar antes do lançamento?</h2>
-        <p class="lead">Escreva para a gente e receba o acesso antecipado e as novidades.</p>
-        <a class="botao" href="mailto:contato@nexpra.com.br?subject=Quero%20testar%20o%20Nexpra">contato@nexpra.com.br</a>
+    <section class="final">
+      <p class="rotulo revelar">Em breve na Chrome Web Store</p>
+      <h2 class="revelar" style="--i:1">Trabalhe com IA.<br>Proteja quem confia em você.</h2>
+      <div class="acoes revelar" style="--i:2;opacity:1;animation:none;margin-top:44px">
+        <a class="botao cheio" href="/acesso">Pedir acesso antecipado</a>
       </div>
     </section>
   </main>
@@ -206,7 +372,223 @@
       <span>© 2026 Usina do Tempo · CNPJ 59.267.749/0001-42</span>
       <a href="/privacidade">Política de privacidade</a>
       <a href="mailto:contato@nexpra.com.br">contato@nexpra.com.br</a>
+      <span>Demonstrações com dados fictícios.</span>
     </div>
   </footer>
+
+  <script>
+  (function () {
+    'use strict';
+    var reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var $ = function (id) { return document.getElementById(id); };
+    var limitar = function (v) { return Math.max(0, Math.min(1, v)); };
+
+    // --- título: palavras entram uma a uma
+    var titulo = $('titulo');
+    var indice = 0;
+    (function dividir(no) {
+      Array.prototype.slice.call(no.childNodes).forEach(function (filho) {
+        if (filho.nodeType === 3) {
+          var frag = document.createDocumentFragment();
+          filho.textContent.split(/(\s+)/).forEach(function (parte) {
+            if (!parte.trim()) { frag.appendChild(document.createTextNode(parte)); return; }
+            var s = document.createElement('span');
+            s.className = 'palavra';
+            s.style.setProperty('--i', indice++);
+            s.textContent = parte;
+            s.setAttribute('aria-hidden', 'true');
+            frag.appendChild(s);
+          });
+          no.replaceChild(frag, filho);
+        } else if (filho.nodeType === 1) { dividir(filho); }
+      });
+    })(titulo);
+
+    // --- revelar ao entrar na tela + contadores
+    var contar = function (el) {
+      var alvo = Number(el.getAttribute('data-alvo'));
+      if (reduzido || alvo === 0) { el.textContent = String(alvo); return; }
+      var inicio = performance.now();
+      (function passo(agora) {
+        var p = limitar((agora - inicio) / 1400);
+        el.textContent = String(Math.round(alvo * (1 - Math.pow(1 - p, 4))));
+        if (p < 1) requestAnimationFrame(passo);
+      })(inicio);
+    };
+    if ('IntersectionObserver' in window) {
+      var obs = new IntersectionObserver(function (entradas) {
+        entradas.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('visto');
+          var b = e.target.querySelector('[data-alvo]');
+          if (b) contar(b);
+          obs.unobserve(e.target);
+        });
+      }, { threshold: 0.18 });
+      document.querySelectorAll('.revelar').forEach(function (el) { obs.observe(el); });
+    } else {
+      document.querySelectorAll('.revelar').forEach(function (el) { el.classList.add('visto'); });
+      document.querySelectorAll('[data-alvo]').forEach(function (b) { b.textContent = b.getAttribute('data-alvo'); });
+    }
+
+    // --- holofote que segue o ponteiro e brilho nos cartões
+    var holofote = $('holofote');
+    document.querySelector('.heroi').addEventListener('pointermove', function (ev) {
+      var r = ev.currentTarget.getBoundingClientRect();
+      holofote.style.setProperty('--mx', (ev.clientX - r.left) + 'px');
+      holofote.style.setProperty('--my', (ev.clientY - r.top) + 'px');
+    });
+    document.querySelectorAll('.cartao').forEach(function (c) {
+      c.addEventListener('pointermove', function (ev) {
+        var r = c.getBoundingClientRect();
+        c.style.setProperty('--cx', (ev.clientX - r.left) + 'px');
+        c.style.setProperty('--cy', (ev.clientY - r.top) + 'px');
+      });
+    });
+
+    // --- cena 1: dados viram marcadores (com embaralhamento)
+    var piis = Array.prototype.slice.call(document.querySelectorAll('.pii'));
+    piis.forEach(function (el) { el.setAttribute('data-original', el.textContent); });
+    var LETRAS = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#%&';
+    var embaralhar = function (el, alvo) {
+      clearInterval(el._t);
+      if (reduzido) { el.textContent = alvo; return; }
+      var n = 0, total = 12;
+      el._t = setInterval(function () {
+        n++;
+        if (n >= total) { clearInterval(el._t); el.textContent = alvo; return; }
+        var fixos = Math.floor(alvo.length * n / total), saida = '';
+        for (var i = 0; i < alvo.length; i++) {
+          saida += i < fixos || alvo[i] === ' ' ? alvo[i] : LETRAS[Math.floor(Math.random() * LETRAS.length)];
+        }
+        el.textContent = saida;
+      }, 28);
+    };
+    var ligados = 0;
+    var definirLigados = function (n) {
+      if (n === ligados) return;
+      piis.forEach(function (el, i) {
+        var deve = i < n, esta = el.classList.contains('on');
+        if (deve === esta) return;
+        el.classList.toggle('on', deve);
+        embaralhar(el, deve ? el.getAttribute('data-token') : el.getAttribute('data-original'));
+      });
+      ligados = n;
+      $('contador').textContent = String(n);
+      var tudo = n === piis.length;
+      $('destino').classList.toggle('pronto', tudo);
+      $('destino').style.setProperty('--envio', tudo ? '1' : '0');
+      $('legenda-placar').innerHTML = tudo ? 'dados protegidos.<br>Só agora o texto segue para a IA.' : 'dados pessoais protegidos<br>antes de qualquer envio';
+    };
+
+    // --- cena 2: manifesto palavra a palavra
+    var manifesto = $('texto-manifesto');
+    manifesto.innerHTML = manifesto.textContent.trim().split(/\s+/).map(function (p) { return '<span>' + p + '</span>'; }).join(' ');
+    var palavras = Array.prototype.slice.call(manifesto.querySelectorAll('span'));
+
+    // --- cena 3: passos e resposta digitada
+    var passos = Array.prototype.slice.call(document.querySelectorAll('.passo'));
+    var telas = Array.prototype.slice.call(document.querySelectorAll('.tela'));
+    var ABAS = ['Fontes', 'Proteção', 'Assistente'];
+    var RESPOSTA = 'Três pontos de atenção para [PESSOA_1]:\n\n1. A cláusula 6ª permite rescisão sem aviso prévio.\n2. A multa de 10% soma-se a juros de 2% ao mês.\n3. O reajuste pelo IPCA não tem data-base definida.\n\nSugestões de redação a seguir.';
+    var passoAtual = -1;
+    var definirPasso = function (i) {
+      if (i === passoAtual) return;
+      passoAtual = i;
+      passos.forEach(function (el, k) { el.classList.toggle('ativo', k === i); });
+      telas.forEach(function (el, k) { el.classList.toggle('ativa', k === i); });
+      $('aba-aparelho').textContent = ABAS[i];
+    };
+
+    // Resposta "digitada" no terceiro passo.
+    var digitacao = null;
+    var digitar = function () {
+      clearInterval(digitacao);
+      var alvo = $('resposta'), n = 0;
+      alvo.textContent = '';
+      digitacao = setInterval(function () {
+        n += 3;
+        alvo.textContent = RESPOSTA.slice(0, n);
+        if (n >= RESPOSTA.length) clearInterval(digitacao);
+      }, 28);
+    };
+
+    if (reduzido) {
+      definirLigados(piis.length);
+      palavras.forEach(function (p) { p.classList.add('aceso'); });
+      definirPasso(2);
+      $('resposta').textContent = RESPOSTA;
+      passos.forEach(function (el, i) {
+        el.addEventListener('click', function () { definirPasso(i); });
+      });
+      return;
+    }
+
+    // --- demonstração do topo: roda sozinha, em ciclo
+    var etapaDemo = 0;
+    var cicloDemo = function () {
+      if (etapaDemo <= piis.length) {
+        definirLigados(etapaDemo);
+        etapaDemo++;
+        setTimeout(cicloDemo, etapaDemo === 1 ? 1500 : etapaDemo > piis.length ? 4200 : 800);
+      } else {
+        etapaDemo = 0; // pausa com tudo protegido já aconteceu; recomeça
+        cicloDemo();
+      }
+    };
+    setTimeout(cicloDemo, 2000);
+
+    // --- manifesto e passos: tocam sozinhos quando entram na tela
+    var DURACAO_PASSO = [4200, 4200, 7500];
+    var relogioPassos = null, passosVisiveis = false;
+    var irParaPasso = function (i) {
+      clearTimeout(relogioPassos);
+      definirPasso(i);
+      if (i === 2) digitar(); else { clearInterval(digitacao); $('resposta').textContent = ''; }
+      if (passosVisiveis) relogioPassos = setTimeout(function () { irParaPasso((i + 1) % 3); }, DURACAO_PASSO[i]);
+    };
+    passos.forEach(function (el, i) {
+      el.addEventListener('click', function () { irParaPasso(i); });
+      el.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); irParaPasso(i); }
+      });
+    });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entradas) {
+        entradas.forEach(function (e) {
+          passosVisiveis = e.isIntersecting;
+          if (passosVisiveis) irParaPasso(passoAtual < 0 ? 0 : passoAtual);
+          else clearTimeout(relogioPassos);
+        });
+      }, { threshold: 0.35 }).observe($('passos'));
+      var obsManifesto = new IntersectionObserver(function (entradas) {
+        if (!entradas[0].isIntersecting) return;
+        palavras.forEach(function (p, i) { setTimeout(function () { p.classList.add('aceso'); }, i * 75); });
+        obsManifesto.disconnect();
+      }, { threshold: 0.4 });
+      obsManifesto.observe(manifesto);
+    } else {
+      palavras.forEach(function (p) { p.classList.add('aceso'); });
+      passosVisiveis = true;
+      irParaPasso(0);
+    }
+
+    // --- rolagem: só a barra de progresso e o recuo da abertura
+    var heroi = $('heroi-conteudo'), barra = $('progresso');
+    var agendado = false;
+    var atualizar = function () {
+      agendado = false;
+      var y = window.scrollY, alturaDoc = document.documentElement.scrollHeight - window.innerHeight;
+      barra.style.transform = 'scaleX(' + (alturaDoc > 0 ? y / alturaDoc : 0) + ')';
+      var ph = limitar(y / window.innerHeight);
+      heroi.style.transform = 'scale(' + (1 - ph * 0.1) + ') translateY(' + (ph * -30) + 'px)';
+      heroi.style.opacity = String(1 - ph * 1.1);
+    };
+    var pedir = function () { if (!agendado) { agendado = true; requestAnimationFrame(atualizar); } };
+    window.addEventListener('scroll', pedir, { passive: true });
+    window.addEventListener('resize', pedir);
+    atualizar();
+  })();
+  </script>
 </body>
 </html>

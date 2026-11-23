@@ -6,7 +6,7 @@ import { AREAS, ORDEM_AREAS } from '@shared/areas/catalogo';
 import { CHAVES_STORAGE } from '@shared/constantes';
 import { enviar, type ConteudoPendente, type RespostaConfig } from '@shared/mensagens';
 import type { Contexto, IdAba, Visao } from './contexto';
-import { botaoIcone, el, icone, interruptor, logotipo, toast } from './dom';
+import { botaoIcone, el, icone, interruptor, toast } from './dom';
 import { espaco } from './estado';
 import { mostrarOnboarding } from './visoes/onboarding';
 import { criarVisaoAssistente } from './visoes/assistente';
@@ -115,17 +115,10 @@ document.addEventListener('keydown', (ev) => {
   }
 });
 
-const topo = el(
-  'header',
-  { class: 'topo' },
-  el('div', { class: 'marca' }, logotipo(), 'Nexpra'),
-  el('div', { class: 'espaco' }),
-  botaoArea,
-  botaoIcone('engrenagem', 'Opções (provedor de IA, chaves, privacidade)', () => chrome.runtime.openOptionsPage())
-);
-
+// Cabeçalho único: o Chrome já exibe ícone e nome da extensão acima do painel, então
+// não repetimos a marca — proteção à esquerda, área e opções à direita.
 const estadoProtecao = el('span', { class: 'estado' });
-const barraProtecao = el('div', { class: 'barra-protecao' });
+const barraProtecao = el('header', { class: 'barra-protecao' });
 let interruptorProtecao: HTMLLabelElement;
 
 function montarBarraProtecao(): void {
@@ -139,7 +132,12 @@ function montarBarraProtecao(): void {
       contexto.status(ligada ? 'Proteção ligada: dados pessoais serão pseudonimizados antes de qualquer envio.' : 'Proteção desligada: as fontes serão enviadas como estão.');
     })();
   }, 'Pseudonimiza dados pessoais localmente antes de enviar à IA');
-  barraProtecao.append(icone('escudoOk'), interruptorProtecao, estadoProtecao);
+  barraProtecao.append(
+    interruptorProtecao,
+    estadoProtecao,
+    botaoArea,
+    botaoIcone('engrenagem', 'Opções (provedor de IA, chaves, privacidade)', () => chrome.runtime.openOptionsPage())
+  );
 }
 
 function atualizarBarraProtecao(): void {
@@ -148,13 +146,16 @@ function atualizarBarraProtecao(): void {
   barraProtecao.classList.toggle('desligada', !espaco.protecao);
   estadoProtecao.textContent = '';
   if (!espaco.protecao) {
-    estadoProtecao.append(el('b', {}, 'Desligada'), ' — fontes vão à IA sem pseudonimização');
+    estadoProtecao.title = 'As fontes vão à IA sem pseudonimização';
+    estadoProtecao.append(el('b', {}, 'Desligada'));
     return;
   }
   const total = espaco.sessao.entidades().filter((e) => !e.ignorada && e.ocorrencias > 0).length;
-  const revisar = el('button', { type: 'button', class: 'link' }, total > 0 ? 'revisar' : 'ver');
+  const revisar = el('button', { type: 'button', class: 'link' }, total > 0 ? `${total} ${total === 1 ? 'dado protegido' : 'dados protegidos'}` : 'Ligada');
+  revisar.title = 'Dados pessoais são pseudonimizados neste navegador antes de qualquer envio. Clique para revisar.';
   revisar.addEventListener('click', () => contexto.irPara('protecao'));
-  estadoProtecao.append(el('b', {}, total > 0 ? `${total} dado(s) pseudonimizado(s)` : 'Ligada'), ' localmente · ', revisar);
+  estadoProtecao.title = '';
+  estadoProtecao.append(revisar);
 }
 
 // ---------------------------------------------------------------------------
@@ -238,7 +239,7 @@ async function principal(): Promise<void> {
   visoes.set('consultas', criarVisaoConsultas(contexto));
   for (const [id, visao] of visoes) paineis.get(id)!.append(visao.elemento);
 
-  app.append(topo, barraProtecao, navAbas, ...paineis.values(), statusEl);
+  app.append(barraProtecao, navAbas, ...paineis.values(), statusEl);
   espaco.aoMudar(atualizarTudo);
   atualizarTudo();
   contexto.irPara(espaco.fontes.length ? 'assistente' : 'fontes');
