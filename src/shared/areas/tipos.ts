@@ -13,7 +13,9 @@ export type AreaId =
   | 'contratacoes'
   | 'social'
   | 'cartorios'
+  | 'sindico'
   | 'rh'
+  | 'sst'
   | 'geral';
 
 /** Dados pessoais mascarados por padrão em todas as áreas. */

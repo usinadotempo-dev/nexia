@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nexpra — IA com proteção de dados para profissionais</title>
-  <meta name="description" content="Extensão para o Chrome que mascara dados pessoais no seu computador antes de enviar documentos à IA. Funcionalidades prontas para 14 áreas e 32 consultas a fontes públicas oficiais.">
+  <meta name="description" content="Extensão para o Chrome que mascara dados pessoais no seu computador antes de enviar documentos à IA. Funcionalidades prontas para 16 áreas e 32 consultas a fontes públicas oficiais.">
   <meta property="og:title" content="Nexpra — IA no trabalho, sem expor ninguém">
   <meta property="og:description" content="Use IA com contratos, processos, prontuários e planilhas sem expor dados pessoais.">
   <meta property="og:type" content="website">
@@ -30,7 +30,7 @@
     nav.topo .links { margin-left: auto; display: flex; gap: 22px; font-size: 13px; color: var(--cinza-claro); }
     nav.topo .links a { text-decoration: none; transition: color 0.2s; }
     nav.topo .links a:hover { color: var(--branco); }
-    .pilula { display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border-radius: 999px; background: var(--branco); color: var(--preto); font-size: 13px; font-weight: 600; text-decoration: none; transition: transform 0.2s; }
+    .pilula { display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border-radius: 999px; background: var(--branco); color: var(--preto); font-size: 13px; font-weight: 600; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: transform 0.2s; }
     .pilula:hover { transform: scale(1.04); }
 
     /* ---------- herói ---------- */
@@ -171,8 +171,14 @@
     footer .contido { display: flex; gap: 14px 28px; flex-wrap: wrap; }
     footer a { text-underline-offset: 3px; }
 
+    @media (max-width: 380px) {
+      nav.topo .links { display: none; }
+      nav.topo .pilula { margin-left: auto; }
+    }
     @media (max-width: 860px) {
       nav.topo .links a.opc { display: none; }
+      nav.topo .links { gap: 0; }
+      .pilula { padding: 0 14px; }
       .duas { grid-template-columns: 1fr; gap: 26px; }
       .folha { padding: 22px 18px 18px; font-size: 12.5px; line-height: 2; border-radius: 16px; }
       .heroi { padding: 96px 0 70px; }
@@ -210,8 +216,8 @@
         <a class="opc" href="#consultas">Consultas</a>
         <a href="#privacidade">Privacidade</a>
       </div>
-      <!-- Os botões levam ao formulário /acesso. Quando a extensão for publicada, troque por o endereço da Chrome Web Store e os textos por "Instalar no Chrome". -->
-      <a class="pilula" href="/acesso">Pedir acesso</a>
+      <!-- Os botões levam à página do Nexpra na Chrome Web Store. O formulário /acesso continua no ar, sem link na home. -->
+      <a class="pilula" href="https://chromewebstore.google.com/detail/eobpjhokmifnkjelpmfjojpklohffoed" target="_blank" rel="noopener">Instalar no Chrome</a>
     </div>
   </nav>
 
@@ -229,7 +235,7 @@
           <h1 id="titulo" aria-label="IA no trabalho. Sem expor ninguém.">IA no trabalho. <span class="fraco">Sem expor ninguém.</span></h1>
           <p class="sub">O Nexpra mascara nomes, CPF e endereços <strong>no seu computador</strong>, antes de o documento chegar à inteligência artificial.</p>
           <div class="acoes">
-            <a class="botao cheio" href="/acesso">Pedir acesso antecipado</a>
+            <a class="botao cheio" href="https://chromewebstore.google.com/detail/eobpjhokmifnkjelpmfjojpklohffoed" target="_blank" rel="noopener">Instalar no Chrome</a>
             <a class="botao" href="#passos">Como funciona</a>
           </div>
         </div>
@@ -294,18 +300,18 @@
 
     <section class="bloco" id="areas">
       <div class="contido">
-        <p class="rotulo revelar">14 áreas profissionais</p>
+        <p class="rotulo revelar">16 áreas profissionais</p>
         <h2 class="revelar" style="--i:1">Pronto para<br>a sua profissão.</h2>
         <p class="lead revelar" style="--i:2">Cada área traz funcionalidades prontas, regras de conduta próprias e as consultas que fazem sentido para ela.</p>
       </div>
       <div class="esteira" aria-hidden="true">
         <div class="trilho"><span>Jurídico</span><span>Saúde</span><span>Contabilidade</span><span>Psicologia</span><span>Engenharia</span><span>Imobiliário</span><span>Educação</span><span>Jurídico</span><span>Saúde</span><span>Contabilidade</span><span>Psicologia</span><span>Engenharia</span><span>Imobiliário</span><span>Educação</span></div>
-        <div class="trilho volta"><span>Seguros</span><span>Finanças</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>RH</span><span>Uso geral</span><span>Seguros</span><span>Finanças</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>RH</span><span>Uso geral</span></div>
+        <div class="trilho volta"><span>Seguros</span><span>Finanças</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>Síndicos</span><span>RH</span><span>Segurança do trabalho</span><span>Uso geral</span><span>Seguros</span><span>Finanças</span><span>Contratações públicas</span><span>Serviço social</span><span>Cartórios</span><span>Síndicos</span><span>RH</span><span>Segurança do trabalho</span><span>Uso geral</span></div>
       </div>
       <p class="contido" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Áreas: jurídico, contabilidade, saúde, psicologia, engenharia e arquitetura, imobiliário, seguros, finanças e investimentos, educação, contratações públicas, serviço social, cartórios, RH e departamento pessoal, uso geral.</p>
       <div class="contido">
         <div class="numeros">
-          <div class="revelar" style="--i:0"><b data-alvo="14">0</b><span>áreas profissionais</span></div>
+          <div class="revelar" style="--i:0"><b data-alvo="16">0</b><span>áreas profissionais</span></div>
           <div class="revelar" style="--i:1"><b data-alvo="32">0</b><span>consultas a fontes públicas</span></div>
           <div class="revelar" style="--i:2"><b data-alvo="25">0</b><span>tipos de dado protegidos</span></div>
           <div class="revelar" style="--i:3"><b data-alvo="0">0</b><span>servidores do Nexpra no caminho</span></div>
@@ -359,10 +365,10 @@
     </section>
 
     <section class="final">
-      <p class="rotulo revelar">Em breve na Chrome Web Store</p>
+      <p class="rotulo revelar">Disponível na Chrome Web Store</p>
       <h2 class="revelar" style="--i:1">Trabalhe com IA.<br>Proteja quem confia em você.</h2>
       <div class="acoes revelar" style="--i:2;opacity:1;animation:none;margin-top:44px">
-        <a class="botao cheio" href="/acesso">Pedir acesso antecipado</a>
+        <a class="botao cheio" href="https://chromewebstore.google.com/detail/eobpjhokmifnkjelpmfjojpklohffoed" target="_blank" rel="noopener">Instalar no Chrome</a>
       </div>
     </section>
   </main>

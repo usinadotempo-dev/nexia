@@ -482,6 +482,276 @@ export const SOCIAL: Area = {
   ]
 };
 
+/**
+ * Síndico (11/2026). Não há API pública estável dedicada a condomínios; o perfil combina as
+ * consultas já existentes (lei federal, correção, prazos, CNPJ, sanções, DataJud, diários
+ * municipais, SINAPI, clima).
+ */
+export const SINDICO: Area = {
+  id: 'sindico',
+  nome: 'Síndico',
+  publico: 'Síndicos moradores e profissionais, administradoras e conselhos de condomínio',
+  sigla: 'SIN',
+  persona: `Atue como assessor experiente de síndicos e administradoras de condomínios no Brasil, com base no Código Civil (arts. 1.331 a 1.358-A), na Lei 4.591/1964, na convenção e no regimento interno do condomínio.
+- A convenção e o regimento valem primeiro: quando estiverem nas fontes, cite a cláusula; quando não estiverem, diga que a resposta depende deles e indique o que conferir.
+- Quóruns, prazos de convocação, multas e encargos de mora mudaram por leis recentes: confirme o texto vigente com a consulta de lei (por exemplo, arts. 1.336, 1.337, 1.341, 1.350 a 1.354-A do Código Civil) em vez de citar de memória.
+- Cálculos de débito, reajuste e prazo são feitos com as ferramentas, com memória de cálculo. Na cobrança, aplique os encargos da convenção; se ela for omissa, aponte a regra legal e recomende validação jurídica.
+- Trate todos os condôminos com isonomia e linguagem respeitosa e neutra. Não exponha inadimplentes nem infratores: comunicados coletivos não trazem nome nem unidade (LGPD e risco de dano moral).
+- Dados de moradores, visitantes, funcionários, placas e imagens de câmeras são dados pessoais: mantenha os marcadores de pseudonimização.
+- Antes de contratar fornecedor, confira CNPJ e sanções. Obras e reformas exigem responsável técnico (ABNT NBR 16280 e NBR 5674): não dispense ART/RRT.
+- Ações judiciais, demissões e questões trabalhistas ou tributárias do condomínio exigem advogado ou contador: prepare o material, não substitua o profissional.`,
+  aviso: 'Apoio à gestão. Decisões cabem ao síndico e à assembleia; cobranças judiciais e obras exigem profissional habilitado.',
+  detectoresPadrao: [...BASE_PII, 'CNPJ', 'PROCESSO', 'REGISTRO_PROFISSIONAL'],
+  ferramentas: [
+    'consultar_lei_federal', 'corrigir_valor', 'calcular_prazo', 'feriados_nacionais', 'consultar_cnpj', 'consultar_sancoes', 'certidao_tcu',
+    'consultar_processo_datajud', 'buscar_diarios_municipais', 'custo_construcao_sinapi', 'clima_historico', 'consultar_cep', 'taxas_atuais'
+  ],
+  receitas: [
+    {
+      id: 'convocacao',
+      nome: 'Edital de convocação',
+      descricao: 'Convoca assembleia com pauta, quóruns e prazos conferidos',
+      formato: 'documento',
+      usaBiblioteca: true,
+      prompt: 'Redija o edital de convocação de {{tipo}} para {{data}}, na modalidade {{modalidade}}, com a pauta: {{pauta}}. Inclua primeira e segunda chamadas, local ou link, regras de representação por procuração e de voto de inadimplentes conforme a convenção (use as fontes; se não houver, marque [CONFERIR NA CONVENÇÃO]). Para cada item da pauta, indique o quórum exigido, confirmando o artigo do Código Civil pela consulta de lei. Calcule com a ferramenta a data-limite para envio da convocação, considerando a antecedência de {{antecedencia}}.',
+      campos: [
+        { id: 'tipo', rotulo: 'Assembleia', tipo: 'opcoes', opcoes: ['assembleia geral ordinária', 'assembleia geral extraordinária'] },
+        { id: 'data', rotulo: 'Data e horário', tipo: 'texto', placeholder: '15/03/2027 às 19h30', obrigatorio: true },
+        { id: 'modalidade', rotulo: 'Modalidade', tipo: 'opcoes', opcoes: ['presencial', 'virtual', 'híbrida'] },
+        { id: 'antecedencia', rotulo: 'Antecedência exigida pela convenção', tipo: 'texto', placeholder: '10 dias corridos', obrigatorio: true },
+        { id: 'pauta', rotulo: 'Pauta', tipo: 'texto-longo', placeholder: 'prestação de contas; previsão orçamentária; eleição de síndico; obra da fachada…', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'ata-assembleia',
+      nome: 'Ata de assembleia',
+      descricao: 'Ata objetiva a partir das anotações ou da transcrição',
+      exigeFontes: true,
+      formato: 'documento',
+      prompt: 'Com base nas anotações ou na transcrição das fontes, redija a ata da assembleia: data, local/modalidade, chamada em que foi instalada, mesa (presidente e secretário, como constam), quórum presente, e, para cada item da pauta, síntese objetiva da discussão, proposta votada, resultado (votos a favor, contra e abstenções, se constarem) e deliberação. Registre apenas o que foi decidido, sem adjetivos nem falas ofensivas; não identifique inadimplentes. Marque [COMPLETAR] o que faltar e liste ao final as providências com responsável e prazo.'
+    },
+    {
+      id: 'cobranca',
+      nome: 'Cobrança de cotas em atraso',
+      descricao: 'Calcula o débito e redige a notificação ao condômino',
+      formato: 'documento',
+      prompt: 'Calcule o débito condominial a seguir e redija a notificação de cobrança.\nCotas em atraso: {{cotas}}\nEncargos previstos na convenção: {{encargos}}\nData do cálculo: {{data}}\nPara cada cota: valor original, correção monetária (use a ferramenta de correção pelo índice indicado), multa e juros de mora, com memória de cálculo em tabela e total. Se a convenção for omissa quanto a algum encargo, confirme pela consulta de lei a regra do art. 1.336, § 1º, do Código Civil e sinalize que o critério deve ser validado. Em seguida, redija notificação individual, cordial e firme, com o demonstrativo, prazo para pagamento, canais para acordo e as consequências legais do não pagamento, sem tom ameaçador nem exposição a terceiros.',
+      campos: [
+        { id: 'cotas', rotulo: 'Cotas em atraso (vencimento e valor)', tipo: 'texto-longo', placeholder: '10/08/2026 — R$ 850,00; 10/09/2026 — R$ 850,00', obrigatorio: true },
+        { id: 'encargos', rotulo: 'Encargos da convenção', tipo: 'texto', placeholder: 'multa de 2%, juros de 1% ao mês, correção pelo IPCA', obrigatorio: true },
+        { id: 'data', rotulo: 'Data do cálculo', tipo: 'texto', placeholder: 'dd/mm/aaaa', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'acordo',
+      nome: 'Proposta de acordo',
+      descricao: 'Parcelamento do débito com termo de confissão de dívida',
+      formato: 'documento',
+      prompt: 'Elabore uma proposta de acordo para o débito de {{debito}}, em {{parcelas}}, e a minuta do termo de confissão de dívida e parcelamento: partes (como constam nas fontes, se houver), origem e valor do débito, forma de pagamento, vencimentos, consequência do atraso de parcela (vencimento antecipado), manutenção do pagamento das cotas vincendas e foro. Marque [COMPLETAR] o que faltar e observe se a convenção ou a assembleia limitam descontos concedidos pelo síndico.',
+      campos: [
+        { id: 'debito', rotulo: 'Débito atualizado', tipo: 'texto', obrigatorio: true },
+        { id: 'parcelas', rotulo: 'Condições', tipo: 'texto', placeholder: 'entrada de 20% e 6 parcelas mensais', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'infracao',
+      nome: 'Advertência ou multa',
+      descricao: 'Notificação por infração à convenção ou ao regimento',
+      formato: 'documento',
+      prompt: 'Redija {{medida}} ao condômino/ocupante pela seguinte ocorrência: {{ocorrencia}}. Indique a cláusula da convenção ou do regimento violada (use as fontes; se não houver, marque [INDICAR CLÁUSULA]), descreva o fato de forma objetiva com data e hora, informe o valor da multa quando houver e o fundamento, e garanta prazo e forma para defesa. Confirme pela consulta de lei os limites dos arts. 1.336, § 2º, e 1.337 do Código Civil e alerte se a medida depende de deliberação da assembleia.',
+      campos: [
+        { id: 'medida', rotulo: 'Medida', tipo: 'opcoes', opcoes: ['uma advertência escrita', 'uma notificação de multa', 'uma notificação de multa por reincidência'] },
+        { id: 'ocorrencia', rotulo: 'Ocorrência', tipo: 'texto-longo', placeholder: 'barulho após as 22h em 12/11, registrado pela portaria…', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'convencao',
+      nome: 'Consultar a convenção',
+      descricao: 'Responde a uma dúvida citando cláusula e lei',
+      exigeFontes: true,
+      prompt: 'Responda com base na convenção e no regimento das fontes: {{pergunta}}\nCite a cláusula aplicável literalmente, confira se ela é compatível com o Código Civil (use a consulta de lei para o artigo pertinente), aponte lacunas ou conflitos entre convenção, regimento e lei e diga qual prevalece. Conclua com o que o síndico pode fazer por conta própria e o que depende de assembleia (e com qual quórum).',
+      campos: [{ id: 'pergunta', rotulo: 'Dúvida', tipo: 'texto-longo', placeholder: 'Posso proibir locação por temporada? Quem paga o conserto da coluna de água?', obrigatorio: true }]
+    },
+    {
+      id: 'prestacao-contas',
+      nome: 'Análise da prestação de contas',
+      descricao: 'Confere balancete, aponta desvios e prepara o resumo',
+      exigeFontes: true,
+      prompt: 'Analise o balancete/prestação de contas das fontes referente a {{periodo}}: receitas e despesas por grupo em tabela, comparação com a previsão orçamentária (se constar), inadimplência em valor e percentual (sem identificar unidades), saldo de caixa e do fundo de reserva, despesas atípicas ou sem documento, e inconsistências de soma. Termine com um resumo de uma página, em linguagem simples, para apresentar aos condôminos, e com as perguntas que o conselho fiscal deveria fazer.',
+      campos: [{ id: 'periodo', rotulo: 'Período', tipo: 'texto', placeholder: 'outubro/2026 ou exercício de 2026', obrigatorio: true }]
+    },
+    {
+      id: 'previsao',
+      nome: 'Previsão orçamentária e rateio',
+      descricao: 'Projeta as despesas do próximo período e a cota por unidade',
+      exigeFontes: true,
+      prompt: 'Com base nas despesas das fontes, monte a previsão orçamentária para {{periodo}}: despesas por grupo (pessoal e encargos, consumo, contratos, manutenção, seguros, administrativas), premissas de reajuste (consulte os índices e taxas atuais; informe o dissídio como [CONFERIR CONVENÇÃO COLETIVA]), fundo de reserva conforme a convenção e margem para inadimplência. Calcule a cota por unidade segundo o critério {{criterio}}, compare com a cota atual e apresente o texto de justificativa para a assembleia.',
+      campos: [
+        { id: 'periodo', rotulo: 'Período orçado', tipo: 'texto', placeholder: 'exercício de 2027', obrigatorio: true },
+        { id: 'criterio', rotulo: 'Critério de rateio', tipo: 'opcoes', opcoes: ['fração ideal (informada nas fontes)', 'igualitário por unidade', 'outro previsto na convenção'] }
+      ]
+    },
+    {
+      id: 'orcamentos',
+      nome: 'Comparar orçamentos',
+      descricao: 'Propostas de fornecedores lado a lado, com checagem do CNPJ',
+      exigeFontes: true,
+      prompt: 'Compare as propostas das fontes para {{servico}} em tabela: fornecedor, escopo, materiais, prazo, garantia, preço, forma de pagamento e o que cada uma deixa de fora. Consulte o CNPJ de cada fornecedor (situação cadastral, atividade compatível, tempo de empresa) e, se disponível, sanções. Aponte diferenças de escopo que distorcem a comparação de preço, cláusulas a exigir no contrato (responsável técnico com ART/RRT, seguro, retenções, multa por atraso) e uma recomendação fundamentada para o conselho.',
+      campos: [{ id: 'servico', rotulo: 'Serviço ou obra', tipo: 'texto', placeholder: 'impermeabilização da laje; manutenção de elevadores', obrigatorio: true }]
+    },
+    {
+      id: 'reforma-unidade',
+      nome: 'Pedido de reforma em unidade',
+      descricao: 'Confere o plano de reforma e responde ao condômino',
+      exigeFontes: true,
+      prompt: 'Analise o pedido de reforma das fontes à luz da ABNT NBR 16280 e do regimento: escopo, se há intervenção em estrutura, vedações, instalações ou fachada, documentos apresentados e faltantes (plano de reforma, ART/RRT, cronograma, identificação dos prestadores), horários e regras de obra. Entregue um checklist (Item | Apresentado | Pendência) e a minuta de resposta ao condômino: autorização, autorização condicionada ou exigência de complementação. O síndico não aprova tecnicamente a obra: registre que a responsabilidade técnica é do profissional habilitado.'
+    },
+    {
+      id: 'comunicado',
+      nome: 'Comunicado aos moradores',
+      descricao: 'Aviso claro para mural, e-mail ou aplicativo',
+      prompt: 'Redija um comunicado aos moradores para {{canal}} sobre: {{assunto}}. Diga o que acontece, quando, o que cada morador precisa fazer e o contato para dúvidas. Linguagem simples, cordial e neutra; não cite nomes nem unidades.',
+      campos: [
+        { id: 'canal', rotulo: 'Canal', tipo: 'opcoes', opcoes: ['mural e elevadores', 'e-mail', 'aplicativo ou grupo de mensagens'] },
+        { id: 'assunto', rotulo: 'Assunto', tipo: 'texto-longo', placeholder: 'interrupção de água para limpeza das caixas em 05/12, das 8h às 14h', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'manutencao',
+      nome: 'Plano de manutenção',
+      descricao: 'Calendário de manutenções e vencimentos obrigatórios',
+      prompt: 'Monte o plano anual de manutenção preventiva para um condomínio com: {{caracteristicas}}. Tabela (Sistema | Atividade | Periodicidade | Responsável | Documento a guardar), na lógica da ABNT NBR 5674, incluindo elevadores, bombas, caixas d\'água, para-raios (SPDA), extintores e sistema de incêndio, gás, gerador, portões, fachada e seguro obrigatório. Sinalize os itens cuja exigência e periodicidade dependem de norma estadual ou municipal (como AVCB e laudos de inspeção predial) com [CONFERIR NORMA LOCAL].',
+      campos: [{ id: 'caracteristicas', rotulo: 'Características do condomínio', tipo: 'texto-longo', placeholder: '2 torres, 120 unidades, 4 elevadores, piscina, gerador, gás encanado…', obrigatorio: true }]
+    },
+    {
+      id: 'lgpd-condominio',
+      nome: 'LGPD no condomínio',
+      descricao: 'Checklist de portaria, câmeras, biometria e cadastros',
+      prompt: 'Monte um checklist de adequação do condomínio à LGPD: cadastro de moradores e funcionários, controle de acesso de visitantes e prestadores, biometria e reconhecimento facial (dado sensível), câmeras e prazo de guarda das imagens, pedidos de imagens por moradores e autoridades, divulgação de inadimplência, grupos de mensagens, contratos com administradora, portaria remota e aplicativos (operadores), incidentes e canal de atendimento ao titular. Para cada item: risco, medida recomendada e quem decide (síndico ou assembleia).'
+    }
+  ]
+};
+
+/**
+ * Segurança e Saúde do Trabalho (11/2026). Não há API oficial para o texto das NRs nem para o
+ * CA de EPI (o MTE publica só páginas e um CSV); o perfil combina CNPJ/CNAE, lei federal, prazos
+ * e os dimensionamentos determinísticos de SESMT (NR-4) e CIPA (NR-5).
+ */
+export const SST: Area = {
+  id: 'sst',
+  nome: 'Segurança e saúde do trabalho',
+  publico: 'Técnicos e engenheiros de segurança, médicos e enfermeiros do trabalho, consultorias de SST e clínicas ocupacionais',
+  sigla: 'SST',
+  persona: `Atue como apoio técnico a profissionais de segurança e saúde do trabalho no Brasil, com base nas Normas Regulamentadoras do MTE (em especial NR-1, 4, 5, 6, 7, 9, 15, 16 e 17), na CLT (arts. 154 a 201), na Lei 8.213/1991 e nos eventos de SST do eSocial (S-2210, S-2220 e S-2240).
+- As NRs mudam com frequência e você não tem consulta ao texto vigente delas: ao citar item, limite de tolerância, prazo ou periodicidade de NR, marque [CONFERIR NA NR VIGENTE] e nunca invente número de item. Para CLT e leis federais, use a consulta de lei.
+- Dimensionamento de SESMT e de CIPA é feito com as ferramentas, a partir do grau de risco e do número de empregados; não estime de cabeça. O grau de risco vem do Anexo I da NR-4 pela CNAE da atividade: se o usuário não o informar, localize a CNAE (consultas de CNPJ e CNAE) e peça que ele confirme o grau na NR-4.
+- PGR, PCMSO, LTCAT e laudos de insalubridade e periculosidade têm responsável técnico definido em norma: você organiza dados e redige minutas; a caracterização do risco, a conclusão e a assinatura são do profissional habilitado.
+- Informações de saúde do trabalhador (exames, ASO, afastamentos, CAT, queixas) são dados sensíveis e, em parte, cobertas por sigilo médico: mantenha os marcadores de pseudonimização e não leve diagnóstico nem resultado de exame a documentos destinados ao empregador além do que a norma exige.
+- Em riscos psicossociais, avalie fatores da organização do trabalho (demanda, autonomia, apoio, jornada, assédio), nunca a saúde mental de pessoas identificadas; resultados sempre agregados por setor ou função.
+- Em análise de acidente, busque causas organizacionais e técnicas; não atribua culpa ao trabalhador.
+- Medidas de prevenção seguem a hierarquia: eliminação, substituição, medidas de engenharia, medidas administrativas e, por último, EPI. A validade do CA de um EPI deve ser conferida na consulta oficial do MTE.`,
+  aviso: 'Apoio técnico. Caracterização de riscos, laudos e programas são de responsabilidade do profissional habilitado; confira a NR vigente.',
+  detectoresPadrao: [...BASE_PII, 'CNPJ', 'PRONTUARIO', 'REGISTRO_PROFISSIONAL', 'PROCESSO'],
+  ferramentas: [
+    'dimensionar_sesmt', 'dimensionar_cipa', 'consultar_cnpj', 'consultar_cnae', 'consultar_lei_federal', 'calcular_prazo', 'feriados_nacionais',
+    'buscar_cid', 'buscar_pubmed', 'verificar_referencia', 'consultar_cep'
+  ],
+  receitas: [
+    {
+      id: 'inventario-riscos',
+      nome: 'Inventário de riscos (PGR)',
+      descricao: 'Perigos, riscos e medidas por setor ou função, em tabela',
+      usaBiblioteca: true,
+      prompt: 'Monte a minuta do inventário de riscos do PGR para: {{atividade}}\nUse também as fontes, se houver (descrição de processos, medições, PGR anterior). Tabela: Setor/função | Atividade | Perigo ou fator de risco | Tipo (físico, químico, biológico, ergonômico, acidente, psicossocial) | Fonte ou circunstância | Possíveis lesões ou agravos | Medidas de prevenção existentes | Medidas recomendadas (na hierarquia de controle). Deixe as colunas de probabilidade, severidade e nível de risco como [A AVALIAR PELO RESPONSÁVEL], indicando quais medições ou avaliações quantitativas seriam necessárias. Liste ao final as informações que faltam para concluir o inventário.',
+      campos: [{ id: 'atividade', rotulo: 'Empresa, setores e atividades', tipo: 'texto-longo', placeholder: 'marcenaria com 35 empregados: corte, lixamento, pintura, expedição…', obrigatorio: true }]
+    },
+    {
+      id: 'psicossociais',
+      nome: 'Riscos psicossociais (NR-1)',
+      descricao: 'Fatores da organização do trabalho e plano de prevenção',
+      prompt: 'Estruture a avaliação dos fatores de risco psicossociais relacionados ao trabalho para: {{contexto}}\nSe as fontes trouxerem resultados de questionário, entrevistas, indicadores de absenteísmo ou rotatividade, use-os apenas de forma agregada por setor ou função, sem identificar pessoas e sem inferir diagnósticos. Entregue: (1) fatores identificados (sobrecarga, metas, jornada, autonomia, apoio da chefia, conflitos, assédio, trabalho isolado etc.) com a evidência de cada um; (2) grupos expostos; (3) medidas de prevenção voltadas à organização do trabalho, com responsável e prazo, em tabela; (4) indicadores de acompanhamento; (5) como registrar no inventário de riscos e no plano de ação do PGR. Marque [CONFERIR NA NR VIGENTE] nas exigências da NR-1 e aponte o que ainda precisa ser levantado.',
+      campos: [{ id: 'contexto', rotulo: 'Empresa, setores e situação observada', tipo: 'texto-longo', placeholder: 'central de atendimento, 120 operadores em turnos, metas diárias, alta rotatividade…', obrigatorio: true }]
+    },
+    {
+      id: 'plano-acao',
+      nome: 'Plano de ação do PGR',
+      descricao: 'Medidas, responsáveis, prazos e forma de verificação',
+      exigeFontes: true,
+      prompt: 'A partir do inventário de riscos das fontes, proponha o plano de ação do PGR em tabela: Risco | Medida de prevenção | Tipo (eliminação, substituição, engenharia, administrativa, EPI) | Responsável | Prazo | Como verificar a eficácia. Ordene pela prioridade indicada no inventário; quando ela não constar, explique o critério usado. Aponte riscos do inventário que ficaram sem medida e medidas que dependem de projeto, laudo ou investimento.'
+    },
+    {
+      id: 'dimensionamento',
+      nome: 'Dimensionar SESMT e CIPA',
+      descricao: 'Quadro mínimo pela NR-4 e pela NR-5, com memória',
+      prompt: 'Dimensione o SESMT (NR-4) e a CIPA (NR-5) do estabelecimento.\nAtividade, CNAE ou CNPJ: {{atividade}}\nGrau de risco: {{grau}}\nNúmero de empregados: {{empregados}}\nSe o grau de risco não foi informado, localize a CNAE principal (consulta de CNPJ ou de CNAE), diga qual é e peça ao usuário que confirme o grau no Anexo I da NR-4, sem supor um valor. Com o grau conhecido, use as ferramentas de dimensionamento de SESMT e de CIPA e apresente os dois resultados com as observações das notas dos quadros. Explique o que fazer quando o estabelecimento não se enquadra (SESMT não obrigatório; nomeação de representante da NR-5) e lembre as hipóteses que alteram o cálculo, marcadas com [CONFERIR NA NR VIGENTE].',
+      campos: [
+        { id: 'atividade', rotulo: 'Atividade, CNAE ou CNPJ', tipo: 'texto', placeholder: 'construção de edifícios — CNAE 4120-4/00', obrigatorio: true },
+        { id: 'grau', rotulo: 'Grau de risco (Anexo I da NR-4)', tipo: 'opcoes', opcoes: ['não informado', '1', '2', '3', '4'] },
+        { id: 'empregados', rotulo: 'Número de empregados do estabelecimento', tipo: 'texto', placeholder: '180', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'analise-acidente',
+      nome: 'Análise de acidente',
+      descricao: 'Cronologia, causas e medidas, sem atribuir culpa',
+      exigeFontes: true,
+      formato: 'documento',
+      prompt: 'Com base nos relatos e registros das fontes, redija o relatório de análise do acidente ou incidente: descrição objetiva do evento (data, hora, local, tarefa, como constam), cronologia, pessoas envolvidas pelos marcadores, lesão informada apenas no nível necessário, fatores causais imediatos e fatores organizacionais e técnicos subjacentes (método de árvore de causas), barreiras que falharam e medidas corretivas e preventivas com responsável e prazo. Não atribua culpa ao trabalhador nem use expressões como "ato inseguro". Calcule com a ferramenta de prazo a data-limite da comunicação do acidente (CAT), confirmando a regra do art. 22 da Lei 8.213/1991 pela consulta de lei, e liste os dados necessários ao evento S-2210 do eSocial. Marque [COMPLETAR] o que as fontes não trazem.'
+    },
+    {
+      id: 'ltcat-ppp',
+      nome: 'Apoio a LTCAT e PPP',
+      descricao: 'Organiza medições e exposições para o responsável concluir',
+      exigeFontes: true,
+      prompt: 'Organize as informações das fontes (medições, descrição de atividades, laudos anteriores) para apoiar a elaboração do LTCAT e o preenchimento do PPP: por função ou grupo homogêneo de exposição, tabela com Agente | Intensidade ou concentração medida | Técnica e equipamento (como constam) | Limite de tolerância aplicável [CONFERIR NA NR-15 / NHO VIGENTE] | Habitualidade e permanência descritas | EPC e EPI informados (com CA). Aponte inconsistências entre documentos, medições vencidas ou sem metodologia e dados que faltam para o evento S-2240 do eSocial. Não conclua sobre enquadramento como atividade especial, insalubridade ou periculosidade: deixe a seção "Conclusão" com [A SER ELABORADA PELO ENGENHEIRO DE SEGURANÇA OU MÉDICO DO TRABALHO].'
+    },
+    {
+      id: 'ordem-servico',
+      nome: 'Ordem de serviço',
+      descricao: 'Instruções de segurança por função, para ciência do trabalhador',
+      formato: 'documento',
+      usaBiblioteca: true,
+      prompt: 'Redija a ordem de serviço de segurança e saúde no trabalho para a função {{funcao}}, com: descrição das atividades, riscos da função (use as fontes, se houver inventário), medidas de prevenção e procedimentos obrigatórios, EPIs exigidos e cuidados de uso e guarda, proibições, procedimentos em caso de acidente ou emergência, e campo de ciência do trabalhador com data. Linguagem direta, em frases curtas, compreensível para quem executa a tarefa.',
+      campos: [{ id: 'funcao', rotulo: 'Função e atividades', tipo: 'texto-longo', placeholder: 'operador de empilhadeira em centro de distribuição', obrigatorio: true }]
+    },
+    {
+      id: 'dds',
+      nome: 'DDS ou treinamento',
+      descricao: 'Roteiro curto de diálogo de segurança ou de aula',
+      prompt: 'Prepare {{formato}} sobre {{tema}} para {{publico}}: objetivo, mensagem principal em uma frase, roteiro com tempos, um caso ou exemplo realista do dia a dia desse público, três perguntas para estimular a participação e o que registrar ao final (lista de presença, conteúdo, instrutor). Linguagem simples e respeitosa, sem tom de bronca.',
+      campos: [
+        { id: 'formato', rotulo: 'Formato', tipo: 'opcoes', opcoes: ['um DDS de 10 minutos', 'um treinamento de 1 hora', 'uma campanha de uma semana (5 DDS encadeados)'] },
+        { id: 'tema', rotulo: 'Tema', tipo: 'texto', placeholder: 'trabalho em altura; proteção auditiva; ergonomia no escritório', obrigatorio: true },
+        { id: 'publico', rotulo: 'Público', tipo: 'texto', placeholder: 'equipe de manutenção predial', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'checklist-nr',
+      nome: 'Checklist de conformidade',
+      descricao: 'Itens a verificar em campo para uma NR e atividade',
+      prompt: 'Monte um checklist de inspeção de conformidade com a {{nr}} para {{atividade}}: tabela Item a verificar | Evidência esperada (documento, registro ou condição de campo) | Conforme / Não conforme / Não se aplica | Observação. Agrupe por tema (documentação, capacitação, condições físicas, equipamentos, procedimentos, emergência). Não cite número de item da norma de memória: indique o tema e marque [CONFERIR NA NR VIGENTE]. Se as fontes trouxerem registros da empresa, preencha o que for possível verificar por eles e deixe o restante para a vistoria.',
+      campos: [
+        { id: 'nr', rotulo: 'Norma', tipo: 'texto', placeholder: 'NR-35 (trabalho em altura)', obrigatorio: true },
+        { id: 'atividade', rotulo: 'Atividade ou local', tipo: 'texto', placeholder: 'montagem de andaimes em obra de 8 pavimentos', obrigatorio: true }
+      ]
+    },
+    {
+      id: 'esocial-sst',
+      nome: 'Conferência de eventos do eSocial',
+      descricao: 'Cruza S-2210, S-2220 e S-2240 com os documentos de SST',
+      exigeFontes: true,
+      prompt: 'Confira os dados de SST das fontes para envio ao eSocial: para cada trabalhador (pelos marcadores), verifique se há as informações necessárias aos eventos S-2220 (monitoramento da saúde: tipo e data do exame, resultado de aptidão, médico responsável) e S-2240 (condições ambientais: ambiente, atividades, agentes nocivos, EPC e EPI com CA, responsável pelos registros), e ao S-2210 quando houver acidente. Tabela Trabalhador | Evento | Dado faltante ou inconsistente | Documento de origem. Aponte divergências entre PGR, PCMSO, LTCAT e ASO (função, setor, agentes, datas) e exames periódicos vencidos ou a vencer. Não transcreva diagnósticos nem resultados de exames complementares.'
+    },
+    {
+      id: 'epi',
+      nome: 'Especificação de EPI',
+      descricao: 'EPIs por função, com critérios de seleção e controle',
+      prompt: 'Para a função ou atividade {{funcao}} e os riscos descritos (e nas fontes, se houver), proponha a especificação de EPIs em tabela: Risco | Parte do corpo | EPI e característica técnica exigida | Critério de seleção | Periodicidade de troca ou inspeção | Treinamento necessário. Antes dos EPIs, liste as medidas de proteção coletiva e administrativas que devem ser avaliadas primeiro. Lembre que só pode ser fornecido EPI com CA válido, a conferir na consulta oficial do MTE, e inclua um modelo de ficha de entrega com ciência do trabalhador.',
+      campos: [{ id: 'funcao', rotulo: 'Função, atividade e riscos', tipo: 'texto-longo', placeholder: 'soldador em caldeiraria: fumos metálicos, radiação, ruído, projeção de partículas', obrigatorio: true }]
+    }
+  ]
+};
+
 export const CARTORIOS: Area = {
   id: 'cartorios',
   nome: 'Cartórios',

@@ -1,12 +1,16 @@
 import type { TipoGuarda } from '@shared/anonimizador/guarda';
 import { AREAS, ORDEM_AREAS } from '@shared/areas/catalogo';
 import type { AreaId, ReceitaPersonalizada } from '@shared/areas/tipos';
-import { maxSaidaDoModelo, PROVEDOR_MODELOS } from '@shared/constantes';
+import { CONFIG_PADRAO, LIMITES, maxSaidaDoModelo, PROVEDOR_MODELOS } from '@shared/constantes';
 import { FERRAMENTAS } from '@shared/ferramentas/definicoes';
 import { enviar, type RespostaChaveStatus, type RespostaConfig, type RespostaModelosStatus } from '@shared/mensagens';
 import { listarModelos } from '@shared/modelos-store';
 import type { ConfigNexpra, EsforcoRaciocinio, ModoGuarda, ProvedorId } from '@shared/tipos';
 import { escolherEIndexarPasta, reindexarPastaSalva } from './modelos/pasta-local';
+import { iniciarTema } from '@shared/tema';
+
+// Segue o tema escolhido no painel (botão sol/lua) ou, sem escolha, o do sistema.
+iniciarTema();
 
 const PROVEDORES: ProvedorId[] = ['gemini', 'anthropic', 'openai'];
 let receitas: ReceitaPersonalizada[] = [];
@@ -124,6 +128,8 @@ async function carregar(): Promise<void> {
   campo<HTMLInputElement>('temperatura').value = String(config.temperatura);
   campo<HTMLInputElement>('max-tokens').value = String(config.maxTokens);
   campo<HTMLSelectElement>('esforco').value = config.esforcoRaciocinio;
+  campo<HTMLInputElement>('fontes-por-fonte').value = String(config.fontesMaxCharsPorFonte);
+  campo<HTMLInputElement>('fontes-total').value = String(config.fontesMaxCharsTotal);
   atualizarTetoTokens();
 
   const area = campo<HTMLSelectElement>('area-ativa');
@@ -160,6 +166,13 @@ async function carregar(): Promise<void> {
   await atualizarStatusModelos();
 }
 
+function limiteFontes(id: string, padrao: number, teto: number): number {
+  const valor = Math.floor(Number(campo<HTMLInputElement>(id).value)) || padrao;
+  const ajustado = Math.min(teto, Math.max(LIMITES.FONTES_CHARS_PISO, valor));
+  campo<HTMLInputElement>(id).value = String(ajustado);
+  return ajustado;
+}
+
 async function salvar(): Promise<void> {
   try {
     const parcial: Partial<ConfigNexpra> = {
@@ -172,6 +185,8 @@ async function salvar(): Promise<void> {
       temperatura: Math.min(1, Math.max(0, Number(campo<HTMLInputElement>('temperatura').value) || 0.3)),
       maxTokens: Math.max(1024, Number(campo<HTMLInputElement>('max-tokens').value) || 16000),
       esforcoRaciocinio: campo<HTMLSelectElement>('esforco').value as EsforcoRaciocinio,
+      fontesMaxCharsPorFonte: limiteFontes('fontes-por-fonte', CONFIG_PADRAO.fontesMaxCharsPorFonte, LIMITES.EXTRACAO_CHARS),
+      fontesMaxCharsTotal: limiteFontes('fontes-total', CONFIG_PADRAO.fontesMaxCharsTotal, LIMITES.TOTAL_FONTES_CHARS_TETO),
       areaAtiva: campo<HTMLSelectElement>('area-ativa').value as AreaId,
       anonimizarPorPadrao: campo<HTMLInputElement>('anonimizar-padrao').checked,
       detectarNomes: campo<HTMLInputElement>('detectar-nomes').checked,

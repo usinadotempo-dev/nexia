@@ -1,6 +1,6 @@
 # Política de Privacidade — Nexpra
 
-**Vigência:** 22 de novembro de 2026 · **Versão da extensão:** 0.2.0
+**Vigência:** 22 de novembro de 2026 · **Versão da extensão:** 0.3.0
 **Responsável:** Usina do Tempo (CNPJ 59.267.749/0001-42) · **Contato:** contato@nexpra.com.br
 **Endereço desta página:** https://nexpra.com.br/privacidade
 

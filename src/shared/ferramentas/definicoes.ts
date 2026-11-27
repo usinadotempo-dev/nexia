@@ -26,7 +26,8 @@ export type CategoriaFerramenta =
   | 'clima'
   | 'compliance'
   | 'compras'
-  | 'educacao';
+  | 'educacao'
+  | 'trabalho';
 
 export interface DefinicaoFerramenta {
   nome: string;
@@ -408,6 +409,32 @@ export const FERRAMENTAS: DefinicaoFerramenta[] = [
     parametros: [{ nome: 'termo', tipo: 'string', descricao: 'Palavra-chave ou código da habilidade', obrigatorio: true, exemplo: 'frações 5º ano' }],
     fonte: 'api.bncc.dev (projeto comunitário, dados da BNCC sob CC BY 4.0; versão beta)',
     envia: 'o termo de busca para api.bncc.dev'
+  },
+  {
+    nome: 'dimensionar_sesmt',
+    titulo: 'Dimensionar SESMT (NR-4)',
+    descricao:
+      'Quadro mínimo do SESMT (técnico e engenheiro de segurança, enfermagem e médico do trabalho) pelo Anexo II da NR-4, a partir do grau de risco e do número de empregados, com as notas de tempo parcial. O grau de risco (1 a 4) vem do Anexo I da NR-4 conforme a CNAE: não o suponha — peça ao usuário se não foi informado.',
+    categoria: 'trabalho',
+    parametros: [
+      { nome: 'grau_risco', tipo: 'string', descricao: 'Grau de risco da atividade (Anexo I da NR-4)', obrigatorio: true, enum: ['1', '2', '3', '4'] },
+      { nome: 'empregados', tipo: 'integer', descricao: 'Número de empregados do estabelecimento', obrigatorio: true, exemplo: '180' }
+    ],
+    fonte: 'Cálculo local — NR-4, Anexo II (Portaria MTP 2.318/2022)',
+    envia: 'nenhum dado (cálculo feito no seu computador)'
+  },
+  {
+    nome: 'dimensionar_cipa',
+    titulo: 'Dimensionar CIPA (NR-5)',
+    descricao:
+      'Número de membros efetivos e suplentes da CIPA pelo Quadro I da NR-5, a partir do grau de risco e do número de empregados do estabelecimento. Indica quando o estabelecimento não se enquadra e cabe nomear o representante da NR-5. O grau de risco (1 a 4) vem do Anexo I da NR-4: não o suponha.',
+    categoria: 'trabalho',
+    parametros: [
+      { nome: 'grau_risco', tipo: 'string', descricao: 'Grau de risco da atividade (Anexo I da NR-4)', obrigatorio: true, enum: ['1', '2', '3', '4'] },
+      { nome: 'empregados', tipo: 'integer', descricao: 'Número de empregados do estabelecimento', obrigatorio: true, exemplo: '180' }
+    ],
+    fonte: 'Cálculo local — NR-5, Quadro I (Portaria MTP 422/2021)',
+    envia: 'nenhum dado (cálculo feito no seu computador)'
   }
 ];
 
@@ -424,6 +451,7 @@ export const ROTULOS_CATEGORIA: Record<CategoriaFerramenta, string> = {
   legislativo: 'Legislação',
   compras: 'Compras públicas',
   educacao: 'Educação',
+  trabalho: 'Segurança do trabalho',
   saude: 'Saúde',
   ciencia: 'Referências',
   clima: 'Clima'

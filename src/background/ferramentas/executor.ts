@@ -9,6 +9,7 @@ import { interpretarNumeroCnj } from '@shared/calculos/cnj';
 import { INDICES, corrigir, formatarMoeda, lerValor, type PontoMensal } from '@shared/calculos/correcao';
 import { formatarBr, isoDeBr, NOMES_DIA, normalizarData, diaDaSemana } from '@shared/calculos/datas';
 import { contarPrazo } from '@shared/calculos/prazos';
+import { dimensionarCipa, dimensionarSesmt } from '@shared/calculos/sst';
 import { LIMITES } from '@shared/constantes';
 import { obterFerramenta } from '@shared/ferramentas/definicoes';
 import type { ConfigNexpra } from '@shared/tipos';
@@ -1187,6 +1188,64 @@ async function buscarBncc(args: Record<string, unknown>): Promise<string> {
   );
 }
 
+function grauEEmpregados(args: Record<string, unknown>): { grau: number; empregados: number } {
+  const grau = inteiro(args, 'grau_risco');
+  if (grau < 1 || grau > 4) throw new ErroFerramenta('Grau de risco deve ser 1, 2, 3 ou 4 (Anexo I da NR-4, conforme a CNAE).');
+  return { grau, empregados: inteiro(args, 'empregados') };
+}
+
+async function executarDimensionarSesmt(args: Record<string, unknown>): Promise<string> {
+  const { grau, empregados } = grauEEmpregados(args);
+  const r = dimensionarSesmt(grau, empregados);
+  const cabecalho = `SESMT — grau de risco ${grau}, ${empregados.toLocaleString('pt-BR')} empregado(s) (faixa: ${r.faixa}):\n`;
+  const ressalva =
+    '\n\nATENÇÃO: o resultado é o quadro mínimo do Anexo II para um estabelecimento. Regras especiais da NR-4 podem alterá-lo (grau de risco pela atividade principal ou preponderante, soma de estabelecimentos, canteiros de obra e frentes de trabalho, SESMT compartilhado ou regionalizado, tratamento de ME e EPP, estabelecimentos de saúde com mais de 500 trabalhadores, trabalhadores de contratadas) — confira a NR-4 vigente.';
+  const fonte = rodape('cálculo local — NR-4, Anexo II (redação da Portaria MTP 2.318/2022)');
+  if (!r.obrigatorio) {
+    return cabecalho + 'O Anexo II da NR-4 não prevê profissionais para este grau de risco e número de empregados: o estabelecimento não está obrigado a constituir SESMT próprio por este quadro.' + ressalva + fonte;
+  }
+  const itens = r.itens.map((i) => {
+    const notas = [
+      i.detalhe,
+      i.tempoParcial ? 'tempo parcial, mínimo de três horas' : '',
+      i.enfermeiroOpcional ? 'o empregador pode optar por um enfermeiro do trabalho em tempo parcial no lugar' : ''
+    ].filter(Boolean);
+    return `- ${i.rotulo}: ${i.quantidade}${notas.length ? ` (${notas.join('; ')})` : ''}`;
+  });
+  const grupos = r.gruposAdicionais > 0 || r.faixa === 'acima de 5.000'
+    ? `\nAcima de 5.000: faixa de 3.501 a 5.000 mais ${r.gruposAdicionais} grupo(s) de 4.000 ou fração acima de 2.000.`
+    : '';
+  return cabecalho + itens.join('\n') + grupos + ressalva + fonte;
+}
+
+async function executarDimensionarCipa(args: Record<string, unknown>): Promise<string> {
+  const { grau, empregados } = grauEEmpregados(args);
+  const r = dimensionarCipa(grau, empregados);
+  const cabecalho = `CIPA — grau de risco ${grau}, ${empregados.toLocaleString('pt-BR')} empregado(s) no estabelecimento (faixa: ${r.faixa}):\n`;
+  const fonte = rodape('cálculo local — NR-5, Quadro I (redação da Portaria MTP 422/2021)');
+  if (!r.obrigatoria) {
+    return (
+      cabecalho +
+      'O estabelecimento não se enquadra no Quadro I da NR-5: não há obrigação de constituir CIPA. Nesse caso, se também não for atendido por SESMT, a organização nomeia um representante da NR-5 entre os empregados (o MEI é dispensado); se houver SESMT, ele desempenha as atribuições da CIPA.' +
+      '\n\nATENÇÃO: confira a NR-5 vigente e eventuais regras de setores específicos (como construção e mineração) e de norma coletiva.' +
+      fonte
+    );
+  }
+  const grupos = r.faixa === 'acima de 10.000'
+    ? `\nAcima de 10.000: faixa de 5.001 a 10.000 mais ${r.gruposAdicionais} grupo(s) completo(s) de 2.500 (o quadro não trata de fração de grupo; critério adotado: só grupos completos).`
+    : '';
+  return (
+    cabecalho +
+    linhas([
+      ['Representantes dos empregados — efetivos', String(r.efetivos)],
+      ['Representantes dos empregados — suplentes', String(r.suplentes)]
+    ]) +
+    grupos +
+    '\n\nO Quadro I fixa o número de representantes eleitos pelos empregados; a organização designa os seus em igual número. ATENÇÃO: setores com regra própria (como construção e mineração), organizações sazonais e normas coletivas podem alterar o dimensionamento — confira a NR-5 vigente.' +
+    fonte
+  );
+}
+
 type Executor = (args: Record<string, unknown>, config: ConfigNexpra) => Promise<string>;
 
 const EXECUTORES: Record<string, Executor> = {
@@ -1221,7 +1280,9 @@ const EXECUTORES: Record<string, Executor> = {
   buscar_ensaios_clinicos: buscarEnsaiosClinicos,
   eventos_adversos_fda: eventosAdversosFda,
   alerta_arboviroses: alertaArboviroses,
-  buscar_bncc: buscarBncc
+  buscar_bncc: buscarBncc,
+  dimensionar_sesmt: executarDimensionarSesmt,
+  dimensionar_cipa: executarDimensionarCipa
 };
 
 /**

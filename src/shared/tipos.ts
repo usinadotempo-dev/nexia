@@ -24,6 +24,10 @@ export interface ConfigNexpra {
   modelos: Record<ProvedorId, string>;
   temperatura: number;
   maxTokens: number;
+  /** Caracteres de cada fonte enviados à IA; o excedente é cortado. */
+  fontesMaxCharsPorFonte: number;
+  /** Caracteres de todas as fontes somadas enviados à IA; as fontes além disso são omitidas. */
+  fontesMaxCharsTotal: number;
   /** Quanto o modelo raciocina antes de responder (mais = melhor e mais lento/caro). */
   esforcoRaciocinio: EsforcoRaciocinio;
   /** Conector PJe: hosts em que a extensão fica desligada. */

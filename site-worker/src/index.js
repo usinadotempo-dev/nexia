@@ -58,8 +58,8 @@ function mensagemAviso(destino, pedido) {
 
 const AREAS = new Set([
   'Jurídico', 'Contabilidade', 'Saúde', 'Psicologia', 'Engenharia e arquitetura', 'Imobiliário', 'Seguros',
-  'Finanças e investimentos', 'Educação', 'Contratações públicas', 'Serviço social', 'Cartórios',
-  'RH e departamento pessoal', 'Outra'
+  'Finanças e investimentos', 'Educação', 'Contratações públicas', 'Serviço social', 'Cartórios', 'Síndico e condomínios',
+  'RH e departamento pessoal', 'Segurança e saúde do trabalho', 'Outra'
 ]);
 
 const json = (corpo, status = 200) =>

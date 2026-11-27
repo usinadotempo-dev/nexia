@@ -29,7 +29,7 @@ function extensao(nome: string): string {
 
 function limitar(texto: string): string {
   const t = texto.replace(/[ \t]+\n/g, '\n').replace(/\n{4,}/g, '\n\n\n').trim();
-  return t.length > LIMITES.POR_DOCUMENTO_CHARS * 2 ? `${t.slice(0, LIMITES.POR_DOCUMENTO_CHARS * 2)}\n[… conteúdo truncado pelo Nexpra]` : t;
+  return t.length > LIMITES.EXTRACAO_CHARS ? `${t.slice(0, LIMITES.EXTRACAO_CHARS)}\n[… conteúdo truncado pelo Nexpra]` : t;
 }
 
 async function ocrImagem(dataUrl: string): Promise<string> {

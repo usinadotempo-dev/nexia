@@ -68,6 +68,20 @@
           <input id="max-tokens" type="number" min="1024" step="1024">
         </div>
       </div>
+      <h3>Tamanho das fontes</h3>
+      <p class="ajuda">Quanto dos seus documentos entra em cada pedido à IA, em caracteres (4 caracteres ≈ 1 token). As fontes vão em toda mensagem da conversa: limites maiores aumentam o custo e só funcionam em modelos com janela de contexto grande. O padrão cabe em modelos de 200 mil tokens.</p>
+      <div class="grade-2">
+        <div class="campo">
+          <label for="fontes-por-fonte">Máx. de caracteres por fonte</label>
+          <input id="fontes-por-fonte" type="number" min="10000" max="1000000" step="10000">
+          <span class="ajuda">O que passar disso é cortado. Padrão: 160000. Máximo: 1000000.</span>
+        </div>
+        <div class="campo">
+          <label for="fontes-total">Máx. de caracteres no total</label>
+          <input id="fontes-total" type="number" min="10000" max="4000000" step="10000">
+          <span class="ajuda">Fontes além do total ficam de fora. Padrão: 600000. Máximo: 4000000.</span>
+        </div>
+      </div>
     </section>
 
     <section class="cartao" id="area">

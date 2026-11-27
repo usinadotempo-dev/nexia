@@ -5,11 +5,15 @@ e o passo a passo. Campos entre colchetes devem ser preenchidos por você.
 
 ## Expansão de 22/11/2026 — o que muda no cadastro da loja
 
-Com a fase 1 da expansão (14 perfis e 32 consultas), atualize no painel, antes de enviar para revisão:
+Com a fase 1 da expansão (15 perfis, com Síndico, e 32 consultas), atualize no painel, antes de enviar para revisão:
 
 - **Justificativa da permissão de host:** acrescente à lista de fontes públicas os endereços novos (linha "Hosts das fontes públicas" da seção 3, já atualizada): Senado e normas.leg.br (texto de leis), TCU (certidão), PNCP (licitações), Querido Diário, Receita/Reforma Tributária, FIPE via parallelum, Europe PMC, ClinicalTrials.gov, InfoDengue e api.bncc.dev.
-- **Descrição:** na frase de abertura e na seção de funcionalidades, inclua os perfis novos — psicologia, educação, imobiliário, seguros, finanças e investimentos, contratações públicas, serviço social e cartórios.
+- **Descrição:** não listar perfis, formatos de arquivo, tipos de dado nem fontes. A 0.2.0 foi rejeitada em 24/11/2026 por "palavras-chave excessivas" (referência Yellow Argon) por causa das enumerações; a descrição da seção 2 foi reescrita em frases corridas e vale para qualquer versão.
 - **Política de privacidade:** reenvie a pasta `site/` ao Cloudflare (a lista de fontes consultadas mudou).
+
+## Área SST (26/11/2026)
+
+A 16ª área, Segurança e saúde do trabalho, não acrescenta permissão de host nem fonte externa: os dimensionamentos de SESMT (NR-4) e CIPA (NR-5) são cálculo local. Nada muda no cadastro da loja. Antes de publicar a versão: conferir os dois quadros de `src/shared/calculos/sst.ts` contra o PDF oficial das NRs no site do MTE (foram transcritos de reproduções e conferidos entre duas fontes, não contra o PDF) e reenviar `site/` e o `site-worker` (lista de áreas do formulário de acesso).
 
 ## Decisões tomadas (22/11/2026)
 
@@ -64,37 +68,31 @@ IA com proteção de dados para profissionais: anonimização local, funcionalid
 ```
 Use inteligência artificial com documentos de trabalho sem expor dados pessoais.
 
-O Nexpra é um painel lateral do Chrome para profissionais de qualquer área — advocacia, contabilidade, saúde, engenharia e arquitetura, RH e departamento pessoal — que precisam usar IA com contratos, processos, prontuários, notas fiscais, laudos e planilhas, respeitando a LGPD.
+O Nexpra é um painel lateral do Chrome para profissionais que precisam usar IA com documentos que contêm dados de clientes, pacientes ou funcionários, respeitando a LGPD.
 
-PROTEÇÃO DE DADOS, NO SEU COMPUTADOR
-• Antes de qualquer envio, nomes, CPF, CNPJ, RG, cartão SUS, PIS, títulos, endereços, telefones, e-mails, números de processo, registros profissionais (OAB, CRM, CREA, CRC…), dados bancários e mais são trocados por pseudônimos como [PESSOA_1] e [CPF_2].
-• Tudo é feito localmente, por regras e dicionário — nenhuma IA participa dessa etapa.
-• Você revisa item a item o que foi mascarado e vê exatamente o texto que a IA vai ler.
-• As respostas voltam com os dados reais só na sua tela.
-• Verificação final bloqueia ou pede confirmação se um CPF, cartão SUS ou cartão de pagamento válido estiver prestes a sair.
-• Funciona até sem IA: anonimize um documento e copie o texto protegido para usar onde quiser.
+Proteção de dados no seu computador
 
-RECEITAS PRONTAS PARA A SUA ÁREA
-• Jurídico: resumo do caso, linha do tempo, análise de contrato, minutas de peças e de atos judiciais, prazos, quesitos, explicação ao cliente.
-• Contabilidade: análise de demonstrações, comparativo de regimes tributários, conferência de NF-e, checklist de obrigações, parecer fiscal.
-• Saúde: resumo SOAP, relatórios e laudos, orientações ao paciente, revisão de evidências no PubMed, checagem de medicamentos.
-• Engenharia e arquitetura: laudo de vistoria, memorial descritivo, análise de orçamento, reajuste por INCC, checklist normativo.
-• RH e DP: checklist de rescisão, descrição de cargo, resumo de convenção coletiva, feedback, medidas disciplinares.
-• Crie suas próprias funcionalidades e use uma pasta de modelos seus como referência de estilo.
+Antes de qualquer envio à IA, o Nexpra troca os dados pessoais do documento por pseudônimos como [PESSOA_1]. Essa etapa é feita no seu computador, por regras e dicionário, sem participação de IA. Você revisa o que foi mascarado e vê exatamente o texto que a IA vai ler. As respostas voltam com os dados reais apenas na sua tela. Uma verificação final avisa se algum documento de identificação válido estiver prestes a sair. O anonimizador também funciona sozinho, sem IA: você protege um documento e copia o texto para usar onde quiser.
 
-CONSULTAS A FONTES PÚBLICAS OFICIAIS
-CNPJ e quadro societário, CEP, CNAE, NCM, código IBGE, correção monetária (IPCA, IPCA-E, INPC, IGP-M, SELIC, INCC…), PTAX, feriados e cálculo de prazos, processos no DataJud (CNJ), sanções CEIS/CNEP, proposições da Câmara, PubMed, bulas (FDA), CID-10, verificação de referências (Crossref) e clima histórico. A IA pode usar essas consultas enquanto responde, e você sempre vê o que foi consultado. Cálculos de prazo e correção são feitos por código, não "de cabeça" pela IA.
+Funcionalidades para a sua área
 
-SEUS DOCUMENTOS, DO SEU JEITO
-PDF (inclusive digitalizado, com reconhecimento de texto local), Word, imagens, XML de NF-e, CSV, a página aberta ou um trecho selecionado. Exporte respostas para o Word.
+Ao escolher a sua área profissional, o painel oferece tarefas prontas para o seu dia a dia, como resumir um caso, analisar um contrato ou redigir um relatório. Você também pode criar as suas próprias tarefas e usar uma pasta de modelos seus como referência de estilo.
 
-CONECTOR PJe
-Em qualquer tribunal que use o PJe, importe o processo aberto com um clique. As partes são pseudonimizadas pelo papel processual ([PARTE AUTORA], [ADVOGADO DO POLO ATIVO]).
+Consultas a fontes públicas oficiais
 
-PRIVACIDADE
-• Sem servidor do Nexpra, sem conta, sem rastreamento, sem anúncios.
-• Você usa a sua própria chave do Google Gemini, Anthropic Claude ou OpenAI.
-• Documentos e conversas ficam só na memória do painel: fechou, apagou.
+O assistente consulta bases públicas brasileiras, como cadastro de empresas e índices econômicos, enquanto responde. Você sempre vê o que foi consultado. Cálculos de prazo e de correção monetária são feitos por código, e não estimados pela IA.
+
+Seus documentos
+
+Carregue arquivos do computador, inclusive digitalizados, ou leve ao painel a página aberta no navegador. O reconhecimento de texto de documentos digitalizados é feito localmente. As respostas podem ser exportadas para o Word.
+
+Conector PJe
+
+Em tribunais que usam o PJe, o processo aberto pode ser importado com um clique, e as partes são pseudonimizadas pelo papel que ocupam no processo.
+
+Privacidade
+
+O Nexpra não tem servidor próprio, conta, rastreamento nem anúncios. Você usa a sua própria chave de um provedor de IA. Documentos e conversas ficam apenas na memória do painel e são apagados quando ele é fechado.
 
 O Nexpra é uma ferramenta de apoio. A responsabilidade técnica pelo uso do conteúdo gerado é do profissional.
 ```
@@ -173,7 +171,7 @@ trocar a fonte pelo INMET antes de faturar.
 ## 8. O que costuma atrasar ou reprovar a revisão
 
 - Permissões amplas sem justificativa clara → use os textos da seção 3.
-- Descrição prometendo o que não faz, ou palavras-chave repetidas → a descrição acima é factual.
+- Descrição prometendo o que não faz, ou com listas de termos separados por vírgula (formatos, siglas, áreas, fontes) → a revisão trata como palavras-chave excessivas; escreva em frases.
 - Política de privacidade ausente ou inacessível.
 - Capturas com dados reais de pessoas.
 - Primeira revisão com hosts amplos (`*.jus.br`) e scripts no "MAIN world" pode ir para análise detalhada: prazo de alguns dias a algumas semanas.

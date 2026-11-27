@@ -4,7 +4,7 @@
  * (APIs públicas e cálculos) que a IA pode usar e as receitas (prompts prontos).
  * Nada aqui é específico de uma instituição.
  */
-import { CARTORIOS, CONTRATACOES, EDUCACAO, FINANCEIRO, IMOBILIARIO, PSICOLOGIA, SEGUROS, SOCIAL } from './novas-areas.ts';
+import { CARTORIOS, CONTRATACOES, EDUCACAO, FINANCEIRO, IMOBILIARIO, PSICOLOGIA, SEGUROS, SINDICO, SOCIAL, SST } from './novas-areas.ts';
 import { BASE_PII, type Area, type AreaId, type Receita, type ReceitaPersonalizada } from './tipos.ts';
 
 const RESPOSTA_ESTRUTURADA = 'Use títulos curtos, listas e tabelas quando ajudarem a leitura.';
@@ -516,13 +516,15 @@ export const AREAS: Record<AreaId, Area> = {
   contratacoes: CONTRATACOES,
   social: SOCIAL,
   cartorios: CARTORIOS,
+  sindico: SINDICO,
   rh: RH,
+  sst: SST,
   geral: GERAL
 };
 
 export const ORDEM_AREAS: AreaId[] = [
   'juridico', 'contabil', 'saude', 'psicologia', 'engenharia', 'imobiliario', 'seguros', 'financeiro',
-  'educacao', 'contratacoes', 'social', 'cartorios', 'rh', 'geral'
+  'educacao', 'contratacoes', 'social', 'cartorios', 'sindico', 'rh', 'sst', 'geral'
 ];
 
 export function obterArea(id: string | undefined): Area {

@@ -60,7 +60,13 @@ export const LIMITES = {
   /** Rodadas máximas de chamadas de ferramenta por resposta. */
   MAX_RODADAS_FERRAMENTAS: 6,
   /** Tamanho máximo do resultado de uma ferramenta devolvido ao modelo. */
-  MAX_RESULTADO_FERRAMENTA: 12_000
+  MAX_RESULTADO_FERRAMENTA: 12_000,
+  /** Texto guardado de cada arquivo ao extrair; também é o teto do limite por fonte nas opções. */
+  EXTRACAO_CHARS: 1_000_000,
+  /** Teto do limite total de fontes nas opções (~1 milhão de tokens). */
+  TOTAL_FONTES_CHARS_TETO: 4_000_000,
+  /** Piso dos dois limites de fontes nas opções. */
+  FONTES_CHARS_PISO: 10_000
 } as const;
 
 export const CHAVES_STORAGE = {
@@ -102,6 +108,9 @@ export const CONFIG_PADRAO: ConfigNexpra = {
   temperatura: 0.3,
   // O raciocínio dos modelos novos também consome este limite: 16 mil evita cortar peças longas.
   maxTokens: 16000,
+  // ~40 mil tokens por fonte e ~150 mil no total: cabe nos modelos com janela de 200 mil tokens.
+  fontesMaxCharsPorFonte: 160_000,
+  fontesMaxCharsTotal: 600_000,
   esforcoRaciocinio: 'medium',
   hostsBloqueados: [],
   ocrAutomatico: true,

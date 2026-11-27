@@ -5,6 +5,7 @@
 import { AREAS, ORDEM_AREAS } from '@shared/areas/catalogo';
 import { CHAVES_STORAGE } from '@shared/constantes';
 import { enviar, type ConteudoPendente, type RespostaConfig } from '@shared/mensagens';
+import { alternarTema, iniciarTema, temaAtual } from '@shared/tema';
 import type { Contexto, IdAba, Visao } from './contexto';
 import { botaoIcone, el, icone, interruptor, toast } from './dom';
 import { espaco } from './estado';
@@ -21,6 +22,21 @@ const ABAS: Array<{ id: IdAba; rotulo: string; icone: string }> = [
   { id: 'protecao', rotulo: 'Proteção', icone: 'escudo' },
   { id: 'consultas', rotulo: 'Consultas', icone: 'busca' }
 ];
+
+// Botão de tema: mostra o ícone do tema para o qual vai mudar (lua no claro, sol no escuro).
+const botaoTema = botaoIcone('lua', 'Tema', () => {
+  alternarTema();
+  atualizarBotaoTema();
+});
+function atualizarBotaoTema(): void {
+  const escuro = temaAtual() === 'escuro';
+  const rotulo = escuro ? 'Mudar para o tema claro' : 'Mudar para o tema escuro';
+  botaoTema.replaceChildren(icone(escuro ? 'sol' : 'lua'));
+  botaoTema.title = rotulo;
+  botaoTema.setAttribute('aria-label', rotulo);
+}
+iniciarTema(atualizarBotaoTema);
+atualizarBotaoTema();
 
 const app = document.getElementById('app')!;
 const statusEl = el('div', { class: 'status', role: 'status', 'aria-live': 'polite' });
@@ -136,6 +152,7 @@ function montarBarraProtecao(): void {
     interruptorProtecao,
     estadoProtecao,
     botaoArea,
+    botaoTema,
     botaoIcone('engrenagem', 'Opções (provedor de IA, chaves, privacidade)', () => chrome.runtime.openOptionsPage())
   );
 }

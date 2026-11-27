@@ -6,7 +6,7 @@ import type { PessoaConhecida, TipoEntidade } from '@shared/anonimizador/detecto
 import { SessaoAnonimizacao } from '@shared/anonimizador/motor';
 import { obterArea } from '@shared/areas/catalogo';
 import type { Area } from '@shared/areas/tipos';
-import { LIMITES } from '@shared/constantes';
+import { CONFIG_PADRAO, LIMITES } from '@shared/constantes';
 import type { ConfigNexpra, MensagemLLM } from '@shared/tipos';
 
 export type OrigemFonte = 'arquivo' | 'colado' | 'pagina' | 'selecao' | 'pje' | 'consulta';
@@ -149,7 +149,19 @@ class Espaco {
   }
 
   caracteresContexto(): number {
-    return this.fontesIncluidas().reduce((s, f) => s + Math.min(f.texto.length, LIMITES.POR_DOCUMENTO_CHARS), 0);
+    const { porFonte, total } = this.limitesFontes();
+    const soma = this.fontesIncluidas().reduce((s, f) => s + Math.min(f.texto.length, porFonte), 0);
+    return Math.min(soma, total);
+  }
+
+  /** Limites de caracteres das fontes (opções), dentro do piso e dos tetos do produto. */
+  limitesFontes(): { porFonte: number; total: number } {
+    const entre = (valor: number, padrao: number, teto: number): number =>
+      Math.min(teto, Math.max(LIMITES.FONTES_CHARS_PISO, Math.floor(Number(valor)) || padrao));
+    return {
+      porFonte: entre(this.config.fontesMaxCharsPorFonte, CONFIG_PADRAO.fontesMaxCharsPorFonte, LIMITES.EXTRACAO_CHARS),
+      total: entre(this.config.fontesMaxCharsTotal, CONFIG_PADRAO.fontesMaxCharsTotal, LIMITES.TOTAL_FONTES_CHARS_TETO)
+    };
   }
 
   /** Mensagem inicial com as fontes (no espaço do modelo), respeitando os limites. */
@@ -157,15 +169,16 @@ class Espaco {
     const fontes = this.fontesIncluidas();
     if (fontes.length === 0) return null;
     const blocos: string[] = [`FONTES FORNECIDAS PELO USUÁRIO (${fontes.length})${this.protecao ? ' — conteúdo pseudonimizado localmente' : ''}`];
+    const limites = this.limitesFontes();
     let total = 0;
     for (const [i, f] of fontes.entries()) {
       let texto = this.textoParaIa(f);
-      const restante = LIMITES.TOTAL_CHARS - total;
+      const restante = limites.total - total;
       if (restante <= 0) {
         blocos.push(`=== Fonte ${i + 1}: ${this.paraIa(f.nome)} — omitida (limite de contexto atingido) ===`);
         continue;
       }
-      const teto = Math.min(LIMITES.POR_DOCUMENTO_CHARS, restante);
+      const teto = Math.min(limites.porFonte, restante);
       if (texto.length > teto) texto = `${texto.slice(0, teto)}\n[… fonte truncada pelo limite de contexto]`;
       total += texto.length;
       blocos.push(`=== Fonte ${i + 1}: ${this.paraIa(f.nome)} (${f.tipo}) ===\n${texto}`);
